@@ -23,7 +23,7 @@ for %%i in (%asm%) do (
 	%yasm% -f win%sz% asm/x%arch%/%%i.s -o obj/x%arch%/%%i.obj
 	if ERRORLEVEL 1 goto :ERR
 )
-cl /O2 /Zi -Iinclude\ -c src\intel_aes.c /Foobj\x%arch%\intel_aes.obj
+cl /O2 /Z7 /MT -Iinclude\ -c src\intel_aes.c /Foobj\x%arch%\intel_aes.obj
 if ERRORLEVEL 1 goto :ERR
 lib /out:lib\x%arch%\intel_aes%arch%.lib obj\x%arch%\*.obj
 if ERRORLEVEL 1 goto :ERR

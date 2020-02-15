@@ -7,13 +7,26 @@ call "c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\vcvarsall.bat" x86
 
 perl Configure --debug VC-WIN32 no-engine no-shared enable-weak-ssl-ciphers enable-ssl3 enable-ssl3-method no-async
 
+perl -i.bak -p -e "s/\/MT/\/MTd/g" makefile
 perl -i.bak -p -e "s/\/MDd/\/MTd/g" makefile
+perl -i.bak -p -e "s/\/MD/\/MTd/g" makefile
 perl -i.bak -p -e "s/\/Zl/\/Z7/g" makefile
 perl -i.bak -p -e "s/\/Zi/\/Z7/g" makefile
+perl -i.bak -p -e "s/\/WX/\/W3/g" makefile
 
-perl -i.bak -p -e "s/\/MD/\/MT/g" configdata.pm
+perl -i.bak -p -e "s/\/MT/\/MTd/g" configdata.pm
+perl -i.bak -p -e "s/\/MDd/\/MTd/g" configdata.pm
+perl -i.bak -p -e "s/\/MD/\/MTd/g" configdata.pm
 perl -i.bak -p -e "s/\/Zl/\/Z7/g" configdata.pm
 perl -i.bak -p -e "s/\/Zi/\/Z7/g" configdata.pm
+perl -i.bak -p -e "s/\/WX/\/W3/g" configdata.pm
+
+echo #ifndef HEADER_DSO_CONF_H> crypto\include\internal\dso_conf.h
+echo #define HEADER_DSO_CONF_H>> crypto\include\internal\dso_conf.h
+echo #define DSO_NONE>> crypto\include\internal\dso_conf.h
+echo #endif>> crypto\include\internal\dso_conf.h
+
+copy /y crypto\include\internal\dso_conf.h crypto\include\internal\dso_conf.h.in
 
 nmake /f makefile clean
 nmake /f makefile
