@@ -5,7 +5,7 @@ set PATH=C:\Strawberry\perl\bin;C:\ADMIN\nasm-2.11.08;%PATH%
 
 call "C:\Program Files (x86)\Microsoft Visual Studio 8\VC\vcvarsall.bat" amd64
 
-perl Configure VC-WIN64A no-engine no-shared enable-weak-ssl-ciphers enable-ssl3 enable-ssl3-method no-async
+perl Configure VC-WIN64A -D_WIN32_WINNT=0x0501 no-engine no-shared enable-weak-ssl-ciphers enable-ssl3 enable-ssl3-method no-async
 
 perl -i.bak -p -e "s/\/MDd/\/MT/g" makefile
 perl -i.bak -p -e "s/\/MTd/\/MT/g" makefile
