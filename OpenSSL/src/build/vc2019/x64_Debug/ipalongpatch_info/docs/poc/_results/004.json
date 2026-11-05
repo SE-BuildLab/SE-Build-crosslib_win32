@@ -1,0 +1,37 @@
+{
+ "nnn": "004",
+ "cve": "CVE-2024-2511",
+ "cveinfo": "TLS13-session-cache-unbounded",
+ "log_file": "20261102_121141_004of033_CVE-2024-2511_TLS13-session-cache-unbounded.log",
+ "start_jst": "2026/11/02 12:11:41 (JST)",
+ "end_jst": "2026/11/02 12:20:28 (JST)",
+ "duration": "00:08:47",
+ "verdict": "PASS",
+ "before_en": "Unpatched 1.1.1w: internal ssl_session_dup() copies not_resumable=1; after a resumed TLSv1.3/SSL_OP_NO_TICKET handshake the cache holds a not_resumable session with session_id_length=0 that can never be evicted; SSL_CTX_sess_number grows 3..22 with a limit of 5 and sess_cache_full stays 0.",
+ "before_ja": "未修正 1.1.1w: 内部 ssl_session_dup() が not_resumable=1 をコピーし、再開された TLSv1.3/SSL_OP_NO_TICKET ハンドシェイク後にキャッシュへ session_id_length=0 の not_resumable セッションが残って追い出し不能となり、上限 5 に対し SSL_CTX_sess_number が 3..22 と増え続ける (sess_cache_full は 0)。",
+ "after_en": "Patched: ssl_session_dup() returns a resumable copy (not_resumable=0), no cached entry has session_id_length=0, the cache never exceeds 5 entries (17 evictions counted); ASan clean, valgrind 0 errors / no leaks.",
+ "after_ja": "修正版: ssl_session_dup() は再開可能な複製を返し (not_resumable=0)、キャッシュに session_id_length=0 のエントリは現れず、件数は 5 を超えない (17 回追い出し)。ASan クリーン、valgrind エラー 0・リーク無し。",
+ "method_en": "C PoC with in-memory BIO TLSv1.3 client/server pairs: connection Y creates cached session S; X resumes S and an info callback at TLS_ST_SR_CLNT_HELLO feeds a bogus record to Y so Y's fatal alert (ssl3_send_alert -> SSL_CTX_remove_session) marks S not_resumable while X uses it; Z resumes X's ticket copy; 20 more handshakes with cache size 5; cache dumped via SSL_CTX_sessions(). Plus static-link structural check of ssl_session_dup() and valgrind/ASan runs.",
+ "method_ja": "メモリ BIO の TLSv1.3 クライアント/サーバ対を使う C PoC: Y がキャッシュ済みセッション S を作り、X が S を再開、TLS_ST_SR_CLNT_HELLO の info コールバックで Y に不正レコードを与えて Y の致命的アラート (ssl3_send_alert → SSL_CTX_remove_session) により X 使用中の S を not_resumable 化、Z が X のチケット複製を再開、さらに上限 5 で 20 回ハンドシェイクし SSL_CTX_sessions() でキャッシュをダンプ。加えて静的リンクによる ssl_session_dup() の構造的検査と valgrind/ASan 実行。",
+ "regression_en": "Patched build: resumptions X/Z succeed (reused=1), 20 full handshakes complete with correct LRU eviction; patched openssl s_server -tls1_3 -no_ticket with s_client -sess_out/-sess_in on 127.0.0.1:14004 shows 'Reused, TLSv1.3' and HTTP 200.",
+ "regression_ja": "修正版: 再開 X/Z 成功 (reused=1)、20 回のフルハンドシェイクが正しい LRU 追い出しとともに完了; 修正版 openssl s_server -tls1_3 -no_ticket と s_client -sess_out/-sess_in (127.0.0.1:14004) で 'Reused, TLSv1.3' と HTTP 200 を確認。",
+ "tools": [
+  "gcc",
+  "AddressSanitizer",
+  "valgrind",
+  "openssl s_server/s_client (patched build)",
+  "bash",
+  "python3 (deliverable generation)"
+ ],
+ "poc_files": [
+  "/home/user/work/poc/004_CVE-2024-2511/poc_2511.c",
+  "/home/user/work/poc/004_CVE-2024-2511/poc_2511_dup.c",
+  "/home/user/work/poc/004_CVE-2024-2511/tlshelp.h",
+  "/home/user/work/poc/004_CVE-2024-2511/run_poc.sh",
+  "/home/user/work/poc/004_CVE-2024-2511/regress_cli.sh",
+  "/home/user/work/poc/004_CVE-2024-2511/make_deliverables.py",
+  "/home/user/work/poc/004_CVE-2024-2511/out/"
+ ],
+ "limitations_en": "The multi-thread race of the advisory is serialised deterministically via the SSL info callback; the not_resumable marking is produced by the library's own fatal-alert path. Growth is demonstrated as cache entry count (unbounded in connections), not as megabytes.",
+ "limitations_ja": "アドバイザリのマルチスレッド競合は SSL info コールバックで決定的に直列化した。not_resumable 化はライブラリ自身の致命的アラート経路が行う。増大はメガバイト量ではなくキャッシュ件数 (接続数に対し無制限) で示した。"
+}

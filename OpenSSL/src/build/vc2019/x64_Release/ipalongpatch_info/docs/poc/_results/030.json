@@ -1,0 +1,39 @@
+{
+  "nnn": "030",
+  "cve": "CVE-2026-54872",
+  "cveinfo": "EC-ladder-scalar-timing-leak",
+  "log_file": "20261102_122354_030of033_CVE-2026-54872_EC-ladder-scalar-timing-leak.log",
+  "start_jst": "2026/11/02 12:23:54",
+  "end_jst": "2026/11/02 12:30:23",
+  "duration": "00:06:29",
+  "verdict": "PASS",
+  "before_en": "gdb inside ec_scalar_mul_ladder() (brainpoolP384r1, 6-word order): at BN_add(lambda, k, cardinality) k->top is 1 for the scalars 1, 1024 and a random 64-bit value but 6 for n-1 and a random full-size value; at BN_add(k, lambda, cardinality) lambda->top is 6 or 7 accordingly (2 distinct values each), so the number of words processed by the padding additions depends on the secret scalar. Timing EC_POINT_mul median(1-word) - median(6-word): +823 ns (final run) / -121 ns (first run) on ~1.11 ms, i.e. within noise as expected for a few-word-operation leak.",
+  "before_ja": "ec_scalar_mul_ladder() 内の gdb (brainpoolP384r1、位数 6 ワード): BN_add(lambda, k, cardinality) で k->top はスカラー 1、1024、ランダム 64 ビット値では 1、n-1 とランダムなフルサイズ値では 6; BN_add(k, lambda, cardinality) で lambda->top はそれに応じて 6 または 7 (各 2 種類の値)。パディングの加算が処理するワード数が秘密スカラーに依存する。タイミング EC_POINT_mul の median(1 ワード) - median(6 ワード): 約 1.11 ms に対し +823 ns (最終実行) / -121 ns (初回実行) で、数ワード演算分の漏えいに対して予想どおりノイズの範囲内。",
+  "after_en": "gdb: immediately before bn_set_top_fixed(k, group_top) k->top is still 1 or 6 (the BN_copy() result), but at both BN_add() calls k->top=6 and lambda->top=7 for every scalar (exactly one value each). Timing delta -416 ns (final) / +1557 ns (first run), medians 1.115 ms vs 1.114 ms unpatched: no measurable slow-down.",
+  "after_ja": "gdb: bn_set_top_fixed(k, group_top) の直前では k->top はまだ 1 または 6 (BN_copy() の結果) だが、2 つの BN_add() 呼び出しではすべてのスカラーで k->top=6、lambda->top=7 (各ちょうど 1 種類)。タイミング差 -416 ns (最終) / +1557 ns (初回)、中央値 1.115 ms 対 未パッチ 1.114 ms: 計測可能な遅延無し。",
+  "method_en": "poc_ladder.c statically linked against each build's libcrypto.a; run_poc.sh drives gdb (breakpoints at the two BN_add() calls and, in the patched tree, at bn_set_top_fixed()) over scalars 1, 1024, n-1, random 64-bit and random full-size ('once' mode), an interleaved min-of-3 timing of 2000+2000 EC_POINT_mul(k*G) (1-word vs 6-word scalars), ECDSA/ECDH regression in C and via the CLI, cross-build checks and valgrind; BASE (unpatched debug) and PATCHED (debug) builds.",
+  "method_ja": "poc_ladder.c を各ビルドの libcrypto.a に静的リンク; run_poc.sh が gdb (2 つの BN_add() 呼び出しと、パッチ版では bn_set_top_fixed() にブレークポイント) をスカラー 1、1024、n-1、ランダム 64 ビット、ランダムフルサイズ ('once' モード) で駆動し、EC_POINT_mul(k*G) 2000+2000 回 (1 ワード対 6 ワードスカラー) の交互・3 回最小値タイミング、C と CLI での ECDSA/ECDH 回帰、ビルド間確認、valgrind を実行; BASE (未パッチデバッグ) と PATCHED (デバッグ) ビルド。",
+  "regression_en": "Both builds: ECDSA 100/100 verified and 100/100 tampered rejected on brainpoolP384r1 and secp256k1, ECDH secrets agree (48/32 bytes); CLI ecparam/dgst -sha384 -sign,-verify/pkeyutl -derive OK on both curves; cross-build signatures 'Verified OK' x4 and PATCHED derive reproduces BASE secrets; valgrind on the patched PoC: 0 errors, 0 bytes definitely/indirectly lost; full make test of the patched tree passed earlier (2658 tests).",
+  "regression_ja": "両ビルド: brainpoolP384r1 と secp256k1 で ECDSA 100/100 検証成功・改変 100/100 拒否、ECDH 秘密一致 (48/32 バイト); 両曲線で CLI ecparam/dgst -sha384 -sign,-verify/pkeyutl -derive OK; ビルド間署名 'Verified OK' x4、PATCHED の derive が BASE の秘密を再現; パッチ版 PoC への valgrind: 0 errors、definitely/indirectly lost 0 bytes; パッチ版ツリーの完全な make test は事前に合格 (2658 テスト)。",
+  "tools": [
+    "gcc (static link against libcrypto.a)",
+    "gdb 15.1 (batch, conditional printf breakpoints)",
+    "clock_gettime(CLOCK_MONOTONIC) timing with quartiles",
+    "openssl ecparam/pkey/dgst/pkeyutl (both builds)",
+    "valgrind --leak-check=full"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/030_CVE-2026-54872/poc_ladder.c",
+    "/home/user/work/poc/030_CVE-2026-54872/run_poc.sh",
+    "/home/user/work/poc/030_CVE-2026-54872/raw_run_poc_attempt1.txt",
+    "/home/user/work/poc/030_CVE-2026-54872/raw_run_poc.txt",
+    "/home/user/work/poc/030_CVE-2026-54872/work/gdb_BASE.cmd",
+    "/home/user/work/poc/030_CVE-2026-54872/work/gdb_PATCHED.cmd",
+    "/home/user/work/poc/030_CVE-2026-54872/work/gdb_sanity.cmd",
+    "/home/user/work/poc/030_CVE-2026-54872/work/valgrind_once_patched.txt",
+    "/home/user/work/poc/030_CVE-2026-54872/work/valgrind_regress_patched.txt",
+    "/home/user/work/poc/030_CVE-2026-54872/make_log.py"
+  ],
+  "limitations_en": "The timing part is informative only: the leak is a few word operations inside a ~1.1 ms scalar multiplication and the measured deltas (+823/-416 ns final, -121/+1557 ns first run) change sign between runs on this shared 4-vCPU VM; the vulnerability is demonstrated structurally with gdb (value-dependent BIGNUM tops at the BN_add() calls). The 1-word scalars used to expose k->top are artificial; the lambda->top dependency (6 vs 7 words) occurs for about 18 % of real random nonces on brainpoolP384r1. The comment inherited from the upstream/Ubuntu patch mentions ossl_bn_priv_rand_range_fixed_top(), which does not exist in 1.1.1: the BN_copy() length still depends on the nonce at word granularity (probability ~2^-64 per word for random nonces), a residual outside the scope of the CVE fix. The verification subagent was terminated before writing the formal log; the orchestrator assembled it from the unaltered raw captures (first attempt's valgrind leak was in the PoC itself and was fixed).",
+  "limitations_ja": "タイミング部分は参考情報: 漏えいは約 1.1 ms のスカラー倍算中の数ワード演算分で、計測差 (最終 +823/-416 ns、初回 -121/+1557 ns) はこの共有 4 vCPU VM では実行毎に符号が変わる。脆弱性は gdb による構造的証拠 (BN_add() 呼び出し時の値依存の BIGNUM top) で実証した。k->top を顕在化させる 1 ワードスカラーは人工的であるが、lambda->top の依存 (6 対 7 ワード) は brainpoolP384r1 の実際のランダムノンスの約 18 % で発生する。上流/Ubuntu パッチから継承したコメントは 1.1.1 に存在しない ossl_bn_priv_rand_range_fixed_top() に言及しており、BN_copy() の長さはワード単位でノンスに依存したまま (ランダムノンスでは 1 ワードあたり約 2^-64 の確率) で、これは本 CVE 修正の範囲外の残余である。検証サブエージェントは正式ログを書く前に停止したため、統括セッションが改変なしの生出力からログを組み立てた (初回試行の valgrind リークは PoC 自身のもので修正済み)。"
+}

@@ -1,0 +1,40 @@
+{
+  "nnn": "013",
+  "cve": "CVE-2025-69420",
+  "cveinfo": "TS-RESP-verify-ASN1-TYPE-check",
+  "log_file": "20261102_121342_013of033_CVE-2025-69420_TS-RESP-verify-ASN1-TYPE-check.log",
+  "start_jst": "2026/11/02 12:13:42 (JST)",
+  "end_jst": "2026/11/02 12:30:59 (JST)",
+  "duration": "00:17:17",
+  "verdict": "PASS",
+  "before_en": "Unpatched 1.1.1w: 'openssl ts -verify' SIGSEGV in ess_get_signing_cert(_v2) (ts_rsp_verify.c:267/279, 'attr->value.sequence->data') when the ESS signingCertificate(V2) attribute value is BOOLEAN (pointer 0xff) or NULL; gdb shows *attr type=1 value 0xff / type=5 value 0x0; ASan SEGV on 0x107 / 0x8 (4/4).",
+  "before_ja": "未修正 1.1.1w: ESS signingCertificate(V2) 属性値が BOOLEAN (ポインタ 0xff) または NULL のとき 'openssl ts -verify' が ess_get_signing_cert(_v2) (ts_rsp_verify.c:267/279、'attr->value.sequence->data') で SIGSEGV。gdb で *attr type=1 値 0xff / type=5 値 0x0、ASan は 0x107 / 0x8 の SEGV (4/4)。",
+  "after_en": "Patched build: 'ts_check_signing_certs:ess signing certificate error', Verification: FAILED, exit 1 for all variants; no crash, no ASan report (10/10).",
+  "after_ja": "修正版: 全変種で 'ts_check_signing_certs:ess signing certificate error'、Verification: FAILED、exit 1。クラッシュ・ASan 報告無し (10/10)。",
+  "method_en": "TSA built per test/recipes/80-test_tsa.t (CAtsa.cnf), genuine responses with ESS v1 and v2, Python DER re-encoder replaces the attribute value by BOOLEAN/NULL/INTEGER, openssl ts -verify on BASE/BASE-ASAN/PATCHED/PATCHED-ASAN, gdb, valgrind.",
+  "method_ja": "test/recipes/80-test_tsa.t (CAtsa.cnf) に従い TSA を構築し ESS v1/v2 の正規応答を作成、Python の DER 再エンコーダで属性値を BOOLEAN/NULL/INTEGER に置換、openssl ts -verify を BASE/BASE-ASAN/PATCHED/PATCHED-ASAN で実行、gdb、valgrind。",
+  "regression_en": "Genuine v1/v2 responses (-queryfile, -data, token form, patched-generated reply) verify OK on the patched build; wrong request still rejected; valgrind clean.",
+  "regression_ja": "正規 v1/v2 応答 (-queryfile、-data、トークン形式、修正版生成の応答) は修正版で OK。誤要求は引き続き拒否。valgrind クリーン。",
+  "tools": [
+    "openssl req/x509/ts (BASE/PATCHED)",
+    "python3 -I (make_bad.py)",
+    "gdb",
+    "AddressSanitizer",
+    "valgrind"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/013_CVE-2025-69420/make_bad.py",
+    "/home/user/work/poc/013_CVE-2025-69420/run_poc.sh",
+    "/home/user/work/poc/013_CVE-2025-69420/tsa/CAtsa.cnf (copy of test/CAtsa.cnf + tsa_config_v1 section)",
+    "/home/user/work/poc/013_CVE-2025-69420/tsa/req1.tsq",
+    "/home/user/work/poc/013_CVE-2025-69420/tsa/resp_v2.tsr",
+    "/home/user/work/poc/013_CVE-2025-69420/tsa/resp_v1.tsr",
+    "/home/user/work/poc/013_CVE-2025-69420/tsa/bad_v2_bool.tsr",
+    "/home/user/work/poc/013_CVE-2025-69420/tsa/bad_v2_null.tsr",
+    "/home/user/work/poc/013_CVE-2025-69420/tsa/bad_v1_bool.tsr",
+    "/home/user/work/poc/013_CVE-2025-69420/tsa/bad_v1_null.tsr",
+    "/home/user/work/poc/013_CVE-2025-69420/out/ (raw captures)"
+  ],
+  "limitations_en": "TSA keys are regenerated on each run; INTEGER control variant never crashed (ASN1_STRING-compatible).",
+  "limitations_ja": "TSA 鍵は実行ごとに再生成。対照の INTEGER 変種は元々クラッシュしない (ASN1_STRING 互換)。"
+}

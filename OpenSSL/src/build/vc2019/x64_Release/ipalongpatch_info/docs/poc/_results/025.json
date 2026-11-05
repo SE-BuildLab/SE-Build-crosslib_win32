@@ -1,0 +1,38 @@
+{
+  "nnn": "025",
+  "cve": "CVE-2026-45447",
+  "cveinfo": "PKCS7-verify-use-after-free",
+  "log_file": "20261102_123854_025of033_CVE-2026-45447_PKCS7-verify-use-after-free.log",
+  "start_jst": "2026/11/02 12:38:54 (JST)",
+  "end_jst": "2026/11/02 12:49:08 (JST)",
+  "duration": "00:10:14",
+  "verdict": "PASS",
+  "before_en": "Unpatched 1.1.1w: PKCS7_verify() on a signedData with empty digestAlgorithms frees the caller's file BIO (BIO_free_all at pk7_smime.c:367); 'openssl smime -verify -content' then aborts with 'refcount error' in BIO_free (smime.c:610), the API PoC segfaults on re-use; valgrind 'Invalid read ... block free'd by PKCS7_verify'; ASan heap-use-after-free (BIO_new_file allocation freed by PKCS7_verify).",
+  "before_ja": "未修正 1.1.1w: digestAlgorithms が空の signedData で PKCS7_verify() が呼び出し側のファイル BIO を解放 (pk7_smime.c:367 の BIO_free_all)。'openssl smime -verify -content' は BIO_free (smime.c:610) で 'refcount error' abort、API PoC は再利用時に SEGV。valgrind 'Invalid read ... block free'd by PKCS7_verify'、ASan は heap-use-after-free (BIO_new_file の確保を PKCS7_verify が解放)。",
+  "after_en": "Patched build: 'Verification failure' exit 4 / PKCS7_verify returns 0, caller's BIO remains valid (re-read and freed), no ASan report, valgrind clean.",
+  "after_ja": "修正版: 'Verification failure' exit 4 / PKCS7_verify が 0 を返し、呼び出し側の BIO は有効 (再読込・解放可)。ASan 報告無し、valgrind クリーン。",
+  "method_en": "Detached DER signature from openssl smime -sign; Python DER re-encoder empties SignedData.digestAlgorithms; triggers: openssl smime -verify -content (file BIO) and a C program (BIO_new_file + PKCS7_verify + BIO re-use/free) on BASE/BASE-ASAN/PATCHED/PATCHED-ASAN; gdb, valgrind; upstream .eml test file on all builds.",
+  "method_ja": "openssl smime -sign の分離 DER 署名を Python の DER 再エンコーダで SignedData.digestAlgorithms を空にして加工。発動経路は openssl smime -verify -content (ファイル BIO) と C プログラム (BIO_new_file + PKCS7_verify + BIO 再利用/解放)。BASE/BASE-ASAN/PATCHED/PATCHED-ASAN で実行、gdb、valgrind、上流 .eml テストファイルも全ビルドで実行。",
+  "regression_en": "Genuine detached (-content), opaque, S/MIME (memory BIO path) and -text verification succeed on the patched build; wrong content rejected; valgrind clean.",
+  "regression_ja": "修正版で正規の分離 (-content)、opaque、S/MIME (メモリ BIO 経路)、-text の検証が成功。誤った内容は拒否。valgrind クリーン。",
+  "tools": [
+    "openssl smime (BASE/PATCHED)",
+    "python3 -I (make_bad.py)",
+    "gcc",
+    "gdb",
+    "valgrind",
+    "AddressSanitizer"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/025_CVE-2026-45447/make_bad.py",
+    "/home/user/work/poc/025_CVE-2026-45447/poc_verify.c",
+    "/home/user/work/poc/025_CVE-2026-45447/build.sh",
+    "/home/user/work/poc/025_CVE-2026-45447/run_poc.sh",
+    "/home/user/work/poc/025_CVE-2026-45447/content.txt",
+    "/home/user/work/poc/025_CVE-2026-45447/good_detached.p7s",
+    "/home/user/work/poc/025_CVE-2026-45447/bad_detached.p7s",
+    "/home/user/work/poc/025_CVE-2026-45447/out/ (raw captures)"
+  ],
+  "limitations_en": "Memory-BIO path (upstream .eml test) is not exploitable on 1.1.1w due to its memory-BIO copy; file BIO path used; debug-build symptom is a refcount assertion abort.",
+  "limitations_ja": "メモリ BIO 経路 (上流 .eml テスト) は 1.1.1w のメモリ BIO コピーのため悪用不可で、ファイル BIO 経路を使用。debug ビルドの症状は refcount アサーションによる abort。"
+}

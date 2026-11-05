@@ -1,0 +1,35 @@
+{
+  "nnn": "001",
+  "cve": "CVE-2023-5678",
+  "cveinfo": "DH-large-Q-excessive-time-DoS",
+  "log_file": "20261102_120524_001of033_CVE-2023-5678_DH-large-Q-excessive-time-DoS.log",
+  "start_jst": "2026/11/02 12:05:24",
+  "end_jst": "2026/11/02 12:24:11",
+  "duration": "00:18:47",
+  "verdict": "PASS",
+  "before_en": "DH_generate_key() time grows linearly with the bit length of q (0.020/0.297/1.269/4.850 s for 16384/262144/1048576/4194304-bit q, 2048-bit p); with an 8192-bit p and 4194304-bit q it did not return within 60 s (watchdog exit 124). DH_check_pub_key(): 3.879 s for a 4194304-bit q, >60 s for a 67108864-bit q, 38.468 s for a 40000-bit modulus; DH_compute_key(): 3.840 s. `openssl genpkey -paramfile` with the huge-q X9.42 parameters was killed by timeout 60 after 59.49 s CPU.",
+  "before_ja": "DH_generate_key() の所要時間は q のビット長に線形に増大 (2048 ビット p で q 16384/262144/1048576/4194304 ビットのとき 0.020/0.297/1.269/4.850 秒)。8192 ビット p と 4194304 ビット q では 60 秒以内に返らず番犬が中断 (終了コード 124)。DH_check_pub_key(): 4194304 ビット q で 3.879 秒、67108864 ビット q で 60 秒超、40000 ビット法で 38.468 秒; DH_compute_key(): 3.840 秒。巨大 q の X9.42 パラメータでの `openssl genpkey -paramfile` は CPU 59.49 秒消費後に timeout 60 で強制終了。",
+  "after_en": "All oversized inputs are rejected in about 1 ms: generate_key/compute_key report DH_R_Q_TOO_LARGE ('q too large'), DH_check_pub_key() returns flags 0x24 (DH_CHECK_INVALID_Q_VALUE) for q > p without exponentiation and fails with 'modulus too large' (flags 0x104) for a 40000-bit p; genpkey fails immediately with 'generate_key:q too large'.",
+  "after_ja": "過大な入力はすべて約 1 ミリ秒で拒否: generate_key/compute_key は DH_R_Q_TOO_LARGE ('q too large')、DH_check_pub_key() は q > p で冪乗せずにフラグ 0x24 (DH_CHECK_INVALID_Q_VALUE)、40000 ビット p では 'modulus too large' (フラグ 0x104) で失敗; genpkey は 'generate_key:q too large' で即時失敗。",
+  "method_en": "C program dh_large_q.c (DH_set0_pqg with RFC 3526 2048/8192-bit p, g=2, q=2^(N-1)+1 up to 2^26 bits, or 40000-bit p) timing DH_generate_key/DH_check_pub_key/DH_compute_key under a 60 s SIGALRM watchdog; X9.42 parameter PEM for `openssl genpkey -paramfile` under timeout 60; run against BASE and PATCHED debug builds.",
+  "method_ja": "C プログラム dh_large_q.c (DH_set0_pqg で RFC 3526 の 2048/8192 ビット p、g=2、q=2^(N-1)+1 (最大 2^26 ビット)、または 40000 ビット p) により 60 秒の SIGALRM 番犬下で DH_generate_key/DH_check_pub_key/DH_compute_key の時間を計測; X9.42 パラメータ PEM で `openssl genpkey -paramfile` を timeout 60 下で実行; BASE と PATCHED のデバッグビルドで実施。",
+  "regression_en": "Benign 2048-bit parameters (q=(p-1)/2): DH_check codes 0, DH_check_pub_key flags 0, shared secrets match; PKCS#3 and X9.42 key agreement via patched genpkey/pkeyutl -derive match; patched test/dhtest ok 1-3; valgrind clean.",
+  "regression_ja": "正常な 2048 ビットパラメータ (q=(p-1)/2): DH_check codes 0、DH_check_pub_key フラグ 0、共有秘密一致; 修正済み genpkey/pkeyutl -derive による PKCS#3 と X9.42 の鍵合意一致; 修正済み test/dhtest ok 1〜3; valgrind 問題なし。",
+  "tools": [
+    "gcc",
+    "clock_gettime/SIGALRM watchdog",
+    "timeout(1)",
+    "openssl genpkey/pkeyutl (patched and unpatched builds)",
+    "test/dhtest (patched build)",
+    "valgrind"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/001_CVE-2023-5678/dh_large_q.c",
+    "/home/user/work/poc/001_CVE-2023-5678/run_poc.sh",
+    "/home/user/work/poc/001_CVE-2023-5678/out/run_poc_full.txt",
+    "/home/user/work/poc/001_CVE-2023-5678/out/run_poc_full_attempt1.txt",
+    "/home/user/work/poc/001_CVE-2023-5678/out/hugeq_dhx_params.pem"
+  ],
+  "limitations_en": "Timing measured on a shared 4-vCPU VM (10-20 % run-to-run variation); linear scaling and 60 s watchdog results are deterministic. TLS path not tested (not affected per advisory). First run_poc.sh run mis-reported FAIL due to a script stderr-capture bug; fixed and re-run, both kept in the log.",
+  "limitations_ja": "共有 4 vCPU VM での時間計測 (実行毎に 10〜20 % 変動); 線形スケーリングと 60 秒番犬の結果は決定的。TLS 経路は未試験 (アドバイザリ上非影響)。run_poc.sh 初回はスクリプトの stderr 捕捉バグで FAIL と誤報告; 修正・再実行し両方をログに保持。"
+}

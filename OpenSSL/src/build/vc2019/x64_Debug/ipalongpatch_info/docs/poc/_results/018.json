@@ -1,0 +1,38 @@
+{
+  "nnn": "018",
+  "cve": "CVE-2026-28388",
+  "cveinfo": "DeltaCRL-no-CRLNumber-NULL-deref",
+  "log_file": "20261102_124759_018of033_CVE-2026-28388_DeltaCRL-no-CRLNumber-NULL-deref.log",
+  "start_jst": "2026/11/02 12:47:59",
+  "end_jst": "2026/11/02 13:11:14",
+  "duration": "00:23:15",
+  "verdict": "PASS",
+  "before_en": "openssl verify -attime 1739527200 -CAfile cve-2026-28388-ca.pem -crl_check -use_deltas -CRLfile cve-2026-28388-crls.pem cve-2026-28388-leaf.pem crashes with SIGSEGV (exit 139); BASE-ASAN: SEGV on address 0x4 in ASN1_INTEGER_cmp (a_int.c:27) <- check_delta_base (x509_vfy.c:1139) <- get_delta_sk <- get_crl_sk <- get_crl_delta <- check_cert <- check_revocation <- X509_verify_cert; gdb: delta->crl_number == NULL while base->crl_number = 1 and delta->base_crl_number = 1.",
+  "before_ja": "openssl verify -attime 1739527200 -CAfile cve-2026-28388-ca.pem -crl_check -use_deltas -CRLfile cve-2026-28388-crls.pem cve-2026-28388-leaf.pem が SIGSEGV (終了コード 139) でクラッシュ; BASE-ASAN: ASN1_INTEGER_cmp (a_int.c:27) ← check_delta_base (x509_vfy.c:1139) ← get_delta_sk ← get_crl_sk ← get_crl_delta ← check_cert ← check_revocation ← X509_verify_cert でアドレス 0x4 の SEGV; gdb: base->crl_number = 1、delta->base_crl_number = 1 に対し delta->crl_number == NULL。",
+  "after_en": "Same command on PATCHED(-ASAN): exits 2 with 'error 11 at 0 depth lookup: CRL is not yet valid' (the malformed delta CRL is ignored); without -attime 'CRL has expired'; no ASan report; valgrind clean.",
+  "after_ja": "同じコマンドを PATCHED(-ASAN) で: 'error 11 at 0 depth lookup: CRL is not yet valid' で終了コード 2 (不正な差分 CRL は無視); -attime 無しでは 'CRL has expired'; ASan 報告なし; valgrind 問題なし。",
+  "method_en": "openssl verify with the upstream test data (base CRL with CRL Number, delta CRL with Delta CRL Indicator but no CRL Number, leaf with Freshest CRL) on BASE, BASE-ASAN, gdb (LD_LIBRARY_PATH), PATCHED, PATCHED-ASAN, valgrind; regress_crl.sh builds a CA with proper base and delta CRLs via openssl ca; run_poc.sh.",
+  "method_ja": "上流テストデータ (CRL Number 付きベース CRL、Delta CRL Indicator はあるが CRL Number の無い差分 CRL、Freshest CRL 付きリーフ) での openssl verify を BASE、BASE-ASAN、gdb (LD_LIBRARY_PATH)、PATCHED、PATCHED-ASAN、valgrind で実行; regress_crl.sh が openssl ca で正しいベース/差分 CRL を持つ CA を構築; run_poc.sh。",
+  "regression_en": "PATCHED: base CRL check OK for both leaves; -use_deltas with a well-formed delta CRL (CRL Number 2, base 1) revokes leaf2 and keeps leaf1 OK; without -use_deltas the delta is ignored; -crl_check_all OK; identical results on BASE; patched verify_extra_test ok 1-7.",
+  "regression_ja": "PATCHED: ベース CRL 検査は両リーフで OK; 正しい差分 CRL (CRL Number 2、ベース 1) での -use_deltas は leaf2 を失効扱いし leaf1 は OK; -use_deltas 無しでは差分は無視; -crl_check_all OK; BASE と同一結果; 修正済み verify_extra_test ok 1〜7。",
+  "tools": [
+    "openssl verify/crl/x509/ca (unpatched and patched builds)",
+    "AddressSanitizer (BASE-ASAN / PATCHED-ASAN builds)",
+    "gdb",
+    "valgrind",
+    "test/verify_extra_test (patched build)"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/018_CVE-2026-28388/run_poc.sh",
+    "/home/user/work/poc/018_CVE-2026-28388/regress_crl.sh",
+    "/home/user/work/poc/018_CVE-2026-28388/ca.cnf",
+    "/home/user/work/poc/018_CVE-2026-28388/cve-2026-28388-ca.pem",
+    "/home/user/work/poc/018_CVE-2026-28388/cve-2026-28388-crls.pem",
+    "/home/user/work/poc/018_CVE-2026-28388/cve-2026-28388-leaf.pem",
+    "/home/user/work/poc/018_CVE-2026-28388/out/run_poc_full.txt",
+    "/home/user/work/poc/018_CVE-2026-28388/out/run_poc_full_attempt1.txt",
+    "/home/user/work/poc/018_CVE-2026-28388/out/base_gdb.txt"
+  ],
+  "limitations_en": "Command line tool used (crash is in libcrypto X509_verify_cert, affects any application with X509_V_FLAG_USE_DELTAS). Upstream test data as input; -attime fixes the patched outcome. Regression delta CRL built with generic ASN1 extension syntax. First run had a wrong verify_extra_test invocation (fixed, re-run).",
+  "limitations_ja": "コマンドラインツールを使用 (クラッシュは libcrypto の X509_verify_cert 内、X509_V_FLAG_USE_DELTAS を使う全アプリに影響)。入力は上流テストデータ; -attime で修正版結果を固定。回帰用差分 CRL は汎用 ASN1 拡張構文で生成。初回は verify_extra_test の呼び出しが誤り (修正・再実行)。"
+}

@@ -1,0 +1,38 @@
+{
+  "nnn": "029",
+  "cve": "CVE-2026-35189",
+  "cveinfo": "Relative-CRLDP-excessive-memory",
+  "log_file": "20261102_124932_029of033_CVE-2026-35189_Relative-CRLDP-excessive-memory.log",
+  "start_jst": "2026/11/02 12:49:32",
+  "end_jst": "2026/11/02 13:11:21",
+  "duration": "00:21:49",
+  "verdict": "PASS",
+  "before_en": "A 87798-byte self-signed certificate with 3000 nameRelativeToCRLIssuer CRLDPs and a 19.5 KB issuer name drives the unpatched tool's peak RSS to 261 MB for 'openssl x509 -noout -purpose' (~5.6 s), 515 MB for 'openssl verify -CAfile cert cert' (~11.3 s) and 516 MB for an 'openssl s_client' verifying it in a real TLS handshake (~11.6 s), versus a ~5 MB baseline; gdb shows DIST_POINT_set_dpname() (X509_NAME_dup of the issuer) hit exactly 3000 times from setup_dp <- setup_crldp <- x509v3_cache_extensions.",
+  "before_ja": "nameRelativeToCRLIssuer 形式の CRLDP 3000 個と 19.5 KB の発行者名を持つ 87798 バイトの自己署名証明書により、未修正ツールのピーク RSS は 'openssl x509 -noout -purpose' で 261 MB (約 5.6 秒)、'openssl verify -CAfile cert cert' で 515 MB (約 11.3 秒)、実 TLS ハンドシェイクで検証する 'openssl s_client' で 516 MB (約 11.6 秒) (基準値約 5 MB); gdb は setup_dp ← setup_crldp ← x509v3_cache_extensions からの DIST_POINT_set_dpname() (発行者名の X509_NAME_dup) がちょうど 3000 回ヒットすることを示す。",
+  "after_en": "Patched tool: 7 MB (x509 -purpose, 0.04 s), 8 MB (verify, 0.02 s), 8 MB (s_client, handshake verified OK); DIST_POINT_set_dpname()/ossl_dist_point_name_full() are not reached when caching extensions.",
+  "after_ja": "修正済みツール: 7 MB (x509 -purpose、0.04 秒)、8 MB (verify、0.02 秒)、8 MB (s_client、ハンドシェイク検証 OK); 拡張キャッシュ時に DIST_POINT_set_dpname()/ossl_dist_point_name_full() には到達しない。",
+  "method_en": "gen_crldp_cert.c generates the certificate (3000 relative CRLDPs, 260x64-char OU issuer); memwrap.c (ru_maxrss via wait4) measures openssl x509/verify/s_client of BASE vs PATCHED; s_server (patched) presents the cert over TLS; gdb breakpoint count on DIST_POINT_set_dpname; regress_idp.sh (openssl ca) checks IDP-based CRL matching for a relative-name CRLDP; run_poc.sh.",
+  "method_ja": "gen_crldp_cert.c で証明書を生成 (相対 CRLDP 3000 個、64 文字 OU 260 個の発行者名); memwrap.c (wait4 の ru_maxrss) で BASE と PATCHED の openssl x509/verify/s_client を計測; s_server (修正済み) が TLS で証明書を提示; DIST_POINT_set_dpname への gdb ブレークポイント回数; regress_idp.sh (openssl ca) で相対名 CRLDP の IDP による CRL 照合を確認; run_poc.sh。",
+  "regression_en": "Leaf with one relative-name CRLDP {CN=crl1}: CRLs with matching IDP (relative name, or full dirName) are accepted, a CRL with IDP CN=crl2 is rejected ('Different CRL scope'), revocation via the matching CRL is detected; identical results on BASE and PATCHED; valgrind clean on the patched tool.",
+  "regression_ja": "相対名 CRLDP {CN=crl1} を 1 個持つリーフ: IDP が一致する CRL (相対名または完全 dirName) は受理、IDP CN=crl2 の CRL は拒否 ('Different CRL scope')、一致 CRL による失効を検知; BASE と PATCHED で同一結果; 修正済みツールの valgrind 問題なし。",
+  "tools": [
+    "gcc",
+    "memwrap (wait4 ru_maxrss)",
+    "openssl x509/verify/s_server/s_client/ca/crl (unpatched and patched builds)",
+    "gdb",
+    "valgrind"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/029_CVE-2026-35189/gen_crldp_cert.c",
+    "/home/user/work/poc/029_CVE-2026-35189/memwrap.c",
+    "/home/user/work/poc/029_CVE-2026-35189/run_poc.sh",
+    "/home/user/work/poc/029_CVE-2026-35189/regress_idp.sh",
+    "/home/user/work/poc/029_CVE-2026-35189/ca_idp.cnf",
+    "/home/user/work/poc/029_CVE-2026-35189/out/big_crldp.pem",
+    "/home/user/work/poc/029_CVE-2026-35189/out/run_poc_full.txt",
+    "/home/user/work/poc/029_CVE-2026-35189/out/run_poc_full_attempt1.txt",
+    "/home/user/work/poc/029_CVE-2026-35189/out/base_gdb.txt"
+  ],
+  "limitations_en": "Peak RSS varies by a few MB between runs on the shared VM (the >30x gap is stable); BASE figure depends on issuer length x CRLDP count. Only the TLS client side measured. CRL matching regression covers relative and full IDP names only (no CRL fetching). First run_poc.sh run had a gdb pending-breakpoint script issue (fixed, re-run).",
+  "limitations_ja": "共有 VM でピーク RSS は数 MB 変動 (30 倍超の差は安定); BASE の数値は発行者長 × CRLDP 数に依存。計測は TLS クライアント側のみ。CRL 照合の回帰は相対・完全 IDP 名のみ (CRL 取得なし)。run_poc.sh 初回は gdb の pending ブレークポイントの問題 (修正・再実行)。"
+}

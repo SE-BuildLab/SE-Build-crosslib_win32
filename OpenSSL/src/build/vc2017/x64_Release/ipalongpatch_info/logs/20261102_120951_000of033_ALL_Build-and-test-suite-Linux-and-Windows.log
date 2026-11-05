@@ -1,0 +1,769 @@
+﻿=== Verification environment / 検証環境 (captured 2026/11/02 11:49:23 JST) ===
+Hostname: vm
+IP addresses: 192.0.2.2
+Kernel: Linux 6.18.44-fc-v185 #1 SMP PREEMPT_DYNAMIC @0 x86_64 GNU/Linux
+OS: Ubuntu 24.04.5 LTS
+CPU: Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical CPUs; flags include aes=1 avx2=avx2
+Memory: 15Gi total
+Virtualization/container: systemd-detect-virt=docker; /.dockerenv=absent; cgroup=9:name=systemd:/
+Execution environment: Anthropic Claude Code cloud sandbox (claude.ai 'Claude Code on the web', ephemeral Linux VM/container, environment id env_01JCo7DCPLioAiaSziA5LodW, session session_0114L1TChBqUkTphQ7qaytCr); not a developer workstation
+AI: Claude Mythos 5.1 (model id claude-mythos-5-1), reasoning effort: max; session start 2026/11/02 10:48:22 (JST)
+Compilers/tools: gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0; Ubuntu clang version 18.1.3 (1ubuntu1); x86_64-w64-mingw32-gcc (GCC) 13-win32; GNU Make 4.3; perl 5, version 38, subversion 2 (v5.38.2) built for x86_64-linux-gnu-thread-multi; Python 3.13.18; GNU gdb (Ubuntu 15.1-1ubuntu1~24.04.1) 15.1; valgrind-3.22.0; wine-9.0 (Ubuntu 9.0~repack-4build3)
+libc: ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39
+Target software: OpenSSL 1.1.1w (openssl-1.1.1w.tar.gz, SHA256 cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8) -> openssl-1.1.1w-ipalongpatch_20261102
+Reference: Ubuntu 20.04 openssl 1.1.1f-1ubuntu2.24+esm6 (openssl_1.1.1f-1ubuntu2.24+esm6.debian.tar.xz SHA256 d57aba66e63067e3297086202045c056989b1d1e672bc5ca66ecfca3964d1dc0)
+Builds used: unpatched 1.1.1w debug build (/home/user/work/base/openssl-1.1.1w: ./config -d shared enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers), unpatched ASan build (/home/user/work/base_asan, same options + enable-asan), patched debug build (/home/user/work/patched/build, same options), patched ASan build (/home/user/work/patched/build-asan), patched mingw64 cross build (/home/user/work/patched/build-mingw64)
+=== end of environment / 環境情報ここまで ===
+
+Whole-tree build and regression test record (all 33 patches applied)
+全パッチ適用後のツリー全体のビルドおよびリグレッションテスト記録
+=====================================================================
+
+[EN] This log records the build of the complete patched source tree
+(openssl-1.1.1w-ipalongpatch_20261102, patches 001..033 applied) and the execution of
+the OpenSSL test suite, on Linux x86_64 (gcc 13.3.0, debug build, shared libraries)
+and for Windows x86_64 (mingw64 cross build with x86_64-w64-mingw32-gcc 13, test
+binaries executed under wine 9.0 with EXE_SHELL=wine). The unpatched 1.1.1w baseline
+was built and tested the same way first (159 recipe files, 2656 tests, PASS); the
+patched tree runs 2658 tests because the new regression tests of patches 018
+(CVE-2026-28388) and 025 (CVE-2026-45447) add one test each (the C level test
+additions of patches 007, 028 and 032 run inside existing recipes).
+[JA] このログは、全 33 パッチを適用した完全なソースツリー (openssl-1.1.1w-ipalongpatch_20261102)
+のビルドと OpenSSL テストスイートの実行を、Linux x86_64 (gcc 13.3.0、デバッグビルド、
+共有ライブラリ) および Windows x86_64 (x86_64-w64-mingw32-gcc 13 による mingw64
+クロスビルド、テストバイナリは wine 9.0 上で EXE_SHELL=wine により実行) について記録した
+ものです。未パッチ 1.1.1w のベースラインも同じ方法で先にビルド・テストしました (159
+レシピファイル、2656 テスト、PASS)。パッチ済みツリーのテスト数が 2658 なのは、パッチ 018
+(CVE-2026-28388) と 025 (CVE-2026-45447) の回帰テストが各 1 テスト追加されたためです
+(パッチ 007, 028, 032 の C レベルのテスト追加は既存レシピ内で実行されます)。
+
+=== 1. Linux: configuration of the patched tree (out-of-tree build) / 構成 ===
+command: ../openssl-1.1.1w-ipalongpatch_20261102/config -d shared enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers
+Operating system: x86_64-whatever-linux2
+Configuring OpenSSL version 1.1.1w (0x1010117fL) for linux-x86_64
+Using os-specific seed configuration
+Creating configdata.pm
+Creating Makefile
+
+**********************************************************************
+***                                                                ***
+***   OpenSSL has been successfully configured                     ***
+***                                                                ***
+***   If you encounter a problem while building, please open an    ***
+***   issue on GitHub <https://github.com/openssl/openssl/issues>  ***
+...
+
+=== 2. Linux: incremental build log after each patch (warnings count) / パッチごとの増分ビルド ===
+patch 001: 0 warning(s), 0 error line(s)
+patch 002: 0 warning(s), 0 error line(s)
+patch 003: 0 warning(s), 0 error line(s)
+patch 004: 0 warning(s), 0 error line(s)
+patch 005: 0 warning(s), 0 error line(s)
+patch 006: 0 warning(s), 0 error line(s)
+patch 007: 0 warning(s), 0 error line(s)
+patch 008: 0 warning(s), 0 error line(s)
+patch 009: 0 warning(s), 0 error line(s)
+patch 010: 0 warning(s), 0 error line(s)
+patch 011: 0 warning(s), 0 error line(s)
+patch 012: 0 warning(s), 0 error line(s)
+patch 013: 0 warning(s), 0 error line(s)
+patch 014: 0 warning(s), 0 error line(s)
+patch 015: 0 warning(s), 0 error line(s)
+patch 016: 0 warning(s), 0 error line(s)
+patch 017: 0 warning(s), 0 error line(s)
+patch 018: 0 warning(s), 0 error line(s)
+patch 019: 0 warning(s), 0 error line(s)
+patch 020: 0 warning(s), 0 error line(s)
+patch 021: 0 warning(s), 0 error line(s)
+patch 022: 0 warning(s), 0 error line(s)
+patch 023: 0 warning(s), 0 error line(s)
+patch 024: 0 warning(s), 0 error line(s)
+patch 025: 0 warning(s), 0 error line(s)
+patch 026: 0 warning(s), 0 error line(s)
+patch 027: 0 warning(s), 0 error line(s)
+patch 028: 0 warning(s), 0 error line(s)
+patch 029: 1 warning(s), 0 error line(s)
+patch 030: 1 warning(s), 0 error line(s)
+patch 031: 0 warning(s), 0 error line(s)
+patch 032: 0 warning(s), 0 error line(s)
+patch 033: 0 warning(s), 0 error line(s)
+(patch 029 was amended to remove a -Wdiscarded-qualifiers warning: X509_NAME_dup() takes a non-const pointer in 1.1.1; see build_029_amend.log: 0 warnings after amendment)
+(patch 031 initially failed to compile because an IPALongPatch marker comment had been nested inside an existing block comment in crypto/ec/ec_mult.c; the marker placement was corrected and the patch rebuilt cleanly - see build_031.log)
+
+=== 3. Linux: full test suite of the final tree (make test HARNESS_JOBS=4) / 全テスト ===
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/01-test_abort.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/01-test_sanity.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/01-test_symbol_presence.t .......... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/01-test_test.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/02-test_errstr.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/02-test_internal_ctype.t ........... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/02-test_lhash.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/02-test_ordinals.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/02-test_stack.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_exdata.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_asn1.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_chacha.t .......... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_curve448.t ........ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_ec.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_mdc2.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_modes.t ........... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_poly1305.t ........ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_siphash.t ......... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_sm2.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_sm4.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_ssl_cert_table.t .. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_x509.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_ui.t ....................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/04-test_asn1_decode.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/04-test_asn1_encode.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/04-test_asn1_string_table.t ........ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/04-test_bio_callback.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/04-test_bioprint.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/04-test_err.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/04-test_pem.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_bf.t ....................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_cast.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_cmac.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_des.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_hmac.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_idea.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_md2.t ...................... skipped: md2 is not supported by this OpenSSL build
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_mdc2.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_rand.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_rc2.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_rc4.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/05-test_rc5.t ...................... skipped: rc5 is not supported by this OpenSSL build
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/06-test-rdrand.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/10-test_bn.t ....................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/10-test_exp.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_dh.t ....................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_dsa.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_ec.t ....................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_ecdsa.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_ecparam.t .................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_genec.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_genrsa.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_mp_rsa.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_out_option.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_rsa.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_rsapss.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/20-test_dgst.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/20-test_enc.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/20-test_enc_more.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/20-test_passwd.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/25-test_crl.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/25-test_d2i.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/25-test_pkcs7.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/25-test_req.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/25-test_sid.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/25-test_verify.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/25-test_x509.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_afalg.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_engine.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_extra.t ................ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_pbelu.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_pkey_meth.t ................ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_pkey_meth_kdf.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/40-test_rehash.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/60-test_x509_check_cert_pkey.t ..... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/60-test_x509_dup_cert.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/60-test_x509_store.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/60-test_x509_time.t ................ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_asyncio.t .................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_bad_dtls.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_clienthello.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_comp.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_key_share.t ................ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_packet.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_recordlen.t ................ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_renegotiation.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_servername.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslcbcpadding.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslcertstatus.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslextension.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslmessages.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslrecords.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslsessiontick.t ........... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslsigalgs.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslsignature.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslskewith0p.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslversions.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_sslvertol.t ................ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_tls13alerts.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_tls13cookie.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_tls13downgrade.t ........... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_tls13hrr.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_tls13kexmodes.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_tls13messages.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_tls13psk.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_tlsextms.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_verify_extra.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/70-test_wpacket.t .................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_ca.t ....................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_cipherbytes.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_cipherlist.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_ciphername.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_cms.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_cmsapi.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_ct.t ....................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_dane.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_dtls.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_dtls_mtu.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_dtlsv1listen.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_ocsp.t ..................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_pkcs12.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_policy_tree.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_ssl_new.t .................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_ssl_old.t .................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_ssl_test_ctx.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_sslcorrupt.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_tsa.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_x509aux.t .................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_asn1_time.t ................ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_async.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_bio_enc.t .................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_bio_memleak.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_constant_time.t ............ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_fatalerr.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_gmdiff.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_gost.t ..................... skipped: No test GOST engine found
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_ige.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_includes.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_memleak.t .................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_overhead.t ................. skipped: Only supported in no-shared builds
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_secmem.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_shlibload.t ................ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_srp.t ...................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_sslapi.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_sslbuffers.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_store.t .................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_sysdefault.t ............... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_threads.t .................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_time_offset.t .............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_tls13ccs.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_tls13encryption.t .......... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_tls13secrets.t ............. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_v3name.t ................... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/95-test_external_boringssl.t ....... skipped: No external tests in this configuration
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/95-test_external_krb5.t ............ skipped: No external tests in this configuration
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/95-test_external_pyca.t ............ skipped: No external tests in this configuration
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/99-test_ecstress.t ................. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/99-test_fuzz.t ..................... ok
+Files=159, Tests=2658, 152 wallclock secs ( 1.62 usr  0.27 sys + 113.36 cusr 16.68 csys = 131.93 CPU)
+Result: PASS
+TEST EXIT: 0
+
+=== 4. Linux: baseline (unpatched 1.1.1w) test suite for comparison / 比較用ベースライン ===
+Files=159, Tests=2656, 137 wallclock secs ( 1.70 usr  0.25 sys + 124.97 cusr 20.44 csys = 147.36 CPU)
+Result: PASS
+TEST EXIT: 0
+
+=== 5. Windows x86_64 (mingw64) cross build / Windows クロスビルド ===
+command: ../openssl-1.1.1w-ipalongpatch_20261102/Configure mingw64 --cross-compile-prefix=x86_64-w64-mingw32- shared enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers
+result: BUILD EXIT: 0; warnings: 67
+   1312270 bytes /home/user/work/patched/build-mingw64/apps/openssl.exe
+   3593172 bytes /home/user/work/patched/build-mingw64/libcrypto-1_1-x64.dll
+   884129 bytes /home/user/work/patched/build-mingw64/libssl-1_1-x64.dll
+x86_64-w64-mingw32-gcc version: x86_64-w64-mingw32-gcc (GCC) 13-win32
+
+=== 6. Windows build: 'openssl.exe version -a' under wine / wine 上での実行 ===
+OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+built on: Mon Nov  2 02:43:56 2026 UTC
+platform: mingw64
+options:  bn(64,64) rc4(16x,int) des(long) idea(int) blowfish(ptr) 
+compiler: x86_64-w64-mingw32-gcc -m64 -Wall -O3 -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_CPUID_OBJ -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DKECCAK1600_ASM -DRC4_ASM -DMD5_ASM -DAESNI_ASM -DVPAES_ASM -DGHASH_ASM -DECP_NISTZ256_ASM -DX25519_ASM -DPOLY1305_ASM -DUNICODE -D_UNICODE -DWIN32_LEAN_AND_MEAN -D_MT -DNDEBUG
+OPENSSLDIR: "C:/Program Files/Common Files/SSL"
+ENGINESDIR: "C:/Program Files/OpenSSL/lib/engines-1_1"
+Seeding source: os-specific
+
+=== 7. Windows build: functional checks under wine (patched code paths) / 機能確認 ===
+=== wine functional checks 2026/11/02 12:07:47 (JST) ===
+--- dgst -sign / -verify (RSA, test/certs/serverkey.pem) ---
+sign exit 0
+Verified OK
+verify exit 0
+--- pkcs12 export / info (PKCS12 code paths of CVE-2024-0727/69419/69421/22795) ---
+export exit 0
+MAC: sha1, Iteration 2048
+MAC length: 20, salt length: 8
+PKCS7 Encrypted data: pbeWithSHA1And40BitRC2-CBC, Iteration 2048
+Certificate bag
+PKCS7 Data
+Shrouded Keybag: pbeWithSHA1And3-KeyTripleDES-CBC, Iteration 2048
+info exit 0
+--- cms encrypt/decrypt RSA (CMS/implicit-rejection paths) ---
+encrypt exit 0
+wine test message
+decrypt exit 0
+--- cms encrypt/decrypt EC KARI (CVE-2026-28389/63072 paths) ---
+encrypt exit 0
+wine test message
+decrypt exit 0
+--- cms PWRI (CVE-2025-9230/42766/9076 paths) ---
+encrypt exit 0
+wine test message
+decrypt exit 0
+--- verify with delta CRL lacking CRL Number (CVE-2026-28388 data; must not crash) ---
+error /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/certs/cve-2026-28388-leaf.pem: verification failed
+CN = Test Leaf
+error 11 at 0 depth lookup: CRL is not yet valid
+CN = Test CA
+error 9 at 1 depth lookup: certificate is not yet valid
+verify exit 2
+--- smime -verify with empty digestAlgorithms SET (CVE-2026-45447 data; must fail cleanly, exit 4) ---
+Verification failure
+356:error:2107106C:PKCS7 routines:PKCS7_signatureVerify:unable to find message digest:../openssl-1.1.1w-ipalongpatch_20261102/crypto/pkcs7/pk7_doit.c:1001:
+356:error:21075069:PKCS7 routines:PKCS7_verify:signature failure:../openssl-1.1.1w-ipalongpatch_20261102/crypto/pkcs7/pk7_smime.c:394:
+smime exit 4
+--- pkeyutl RSA pkcs1 decrypt of corrupted ciphertext (Marvin implicit rejection: no error expected) ---
+secret (good ct exit 0)
+bad ct exit 0 ; synthetic output bytes: 152
+388:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_pk1.c:277:
+388:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_ossl.c:737:
+bad ct with implicit_rejection:0 exit 1
+
+=== 8. Windows build: test suite subset under wine (EXE_SHELL=wine) / テストスイート (一部) ===
+command: make test TESTS="test_internal_ec test_dh test_rsa test_pkcs12 test_pkcs7 test_cms test_cmsapi test_verify test_evp test_ec test_ecdsa test_ocb test_dtls test_sslbuffers" EXE_SHELL=wine HARNESS_JOBS=1  (test_ocb is not a recipe name and was ignored)
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/03-test_internal_ec.t .. ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_dh.t ........... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_ec.t ........... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_ecdsa.t ........ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/15-test_rsa.t .......... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/25-test_pkcs7.t ........ ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/25-test_verify.t ....... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp.t .......... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_cms.t .......... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_cmsapi.t ....... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_dtls.t ......... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/80-test_pkcs12.t ....... ok
+../../openssl-1.1.1w-ipalongpatch_20261102/test/recipes/90-test_sslbuffers.t ... ok
+Files=13, Tests=194, 53 wallclock secs ( 0.12 usr  0.03 sys + 16.46 cusr 18.23 csys = 34.84 CPU)
+Result: PASS
+TEST EXIT: 0
+
+=== 9. ASan builds (used by the per-CVE PoC logs) / ASan ビルド ===
+unpatched: /home/user/work/base_asan: BUILD EXIT: 0
+patched  : /home/user/work/patched/build-asan: BUILD EXIT: 0
+
+=== 10. Consistency check (i)/(ii)/(iii) / 一致検証 ===
+[EN] (i) the 33 individual patches applied in order 001..033 with "patch -p1" to a pristine
+openssl-1.1.1w tree, (ii) the single consolidated patch applied to another pristine tree,
+and (iii) the delivered tree (excluding ipalongpatch_info/) were compared with
+"diff -r": (i) == (ii) and (i) == (iii), no differences (3108 files each; the pristine
+tree has 3104 files, the 4 new files are test data of patches 018 and 025).
+[JA] (i) 33 本の個別パッチを 001..033 の順に "patch -p1" で素の openssl-1.1.1w ツリーに適用、
+(ii) 集約パッチ 1 本を別の素のツリーに適用、(iii) 納品ツリー (ipalongpatch_info/ を除く) を
+"diff -r" で比較し、(i) == (ii) かつ (i) == (iii) で差分なし (各 3108 ファイル; 素のツリーは
+3104 ファイルで、新規 4 ファイルはパッチ 018 と 025 のテストデータ)。
+
+Recorded: 2026/11/02 12:09:52 (JST)
+Verdict: PASS / 合格
+
+=== 11. Post-review amendments and re-verification / レビュー後の修正と再検証 (recorded 2026/11/02 16:49:07 JST) ===
+
+[EN] After the complete first assembly of the deliverable (13:23 JST) a multi-perspective review of the deliverable (six independent read-only review agents, each finding re-examined by a sceptical second agent; 36 findings, 22 confirmed) led to the amendments below. The amended commits were re-applied in place (git history rebuilt from the base, tags p001..p033 re-pointed at 16:28 JST), the 33 patch files were regenerated, and the build, test and consistency checks were repeated.
+[JA] 納品物の最初の完全な組み立て (13:23 JST) の後、多観点レビュー (6 つの独立した読み取り専用レビューエージェント、各指摘を懐疑的な第 2 のエージェントが再検証; 指摘 36 件、確認 22 件) により以下の修正を行った。該当コミットをその場で修正し (base から履歴を再構築、タグ p001..p033 を 16:28 JST に更新)、33 本のパッチファイルを再生成し、ビルド・テスト・一致検証を繰り返した。
+
+Amendments to the source tree (all logic of the vulnerability fixes unchanged) / ソースツリーへの修正 (脆弱性修正のロジックは不変):
+  001  DHerr() in DH_check_pub_key() uses the new function code DH_F_DH_CHECK_PUB_KEY (127) instead of DH_F_DH_CHECK; comment blocks re-wrapped to 79 columns.
+       / DH_check_pub_key() の DHerr() を DH_F_DH_CHECK から新設の DH_F_DH_CHECK_PUB_KEY (127) に変更; コメントブロックを 79 桁に再整形。
+  002  PKCS12err() in PKCS12_unpack_p7encdata() uses the new code PKCS12_F_PKCS12_UNPACK_P7ENCDATA (134).
+       / PKCS12_unpack_p7encdata() の PKCS12err() を新設の PKCS12_F_PKCS12_UNPACK_P7ENCDATA (134) に変更。
+  003  crypto/rsa/rsa_pk1.c includes rsa_local.h (prototype of ossl_rsa_padding_check_PKCS1_type_2(); --strict-warnings builds); crypto/cms/cms_env.c issues the
+       EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION ctrl only for RSA_PKCS1_PADDING and guards the RSA code with OPENSSL_NO_RSA (RSAES-OAEP recipients no longer leave
+       two stale errors in the error queue after CMS_RecipientInfo_decrypt()).
+       / crypto/rsa/rsa_pk1.c が rsa_local.h をインクルード (ossl_rsa_padding_check_PKCS1_type_2() のプロトタイプ; --strict-warnings ビルド); crypto/cms/cms_env.c は
+       EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION ctrl を RSA_PKCS1_PADDING のときのみ発行し RSA コードを OPENSSL_NO_RSA でガード (RSAES-OAEP 受信者で
+       CMS_RecipientInfo_decrypt() 後にエラーキューへ 2 件の無関係なエラーが残らなくなる)。
+  004  SSLerr() in ssl_session_dup_intern() uses the new code SSL_F_SSL_SESSION_DUP_INTERN (641).
+       / ssl_session_dup_intern() の SSLerr() を新設の SSL_F_SSL_SESSION_DUP_INTERN (641) に変更。
+  007  crypto/bn/bn_gf2m.c defines OPENSSL_ECC_MAX_FIELD_BITS (661) as a fallback when <openssl/ec.h> is empty ('no-ec' builds, which do not disable ec2m in 1.1.1).
+       / crypto/bn/bn_gf2m.c に <openssl/ec.h> が空の場合 ('no-ec' ビルド; 1.1.1 では ec2m を無効化しない) の OPENSSL_ECC_MAX_FIELD_BITS (661) フォールバック定義を追加。
+  008  BNerr() in bn_mod_exp_mont_fixed_top() uses the new code BN_F_BN_MOD_EXP_MONT_FIXED_TOP (153).
+       / bn_mod_exp_mont_fixed_top() の BNerr() を新設の BN_F_BN_MOD_EXP_MONT_FIXED_TOP (153) に変更。
+  014  one code line wrapped to 80 columns (crypto/pkcs12/p12_decr.c). / コード 1 行を 80 桁以内に折り返し (crypto/pkcs12/p12_decr.c)。
+  023  ASN1err() in out_utf8() uses the new code ASN1_F_OUT_UTF8 (234). / out_utf8() の ASN1err() を新設の ASN1_F_OUT_UTF8 (234) に変更。
+  027  four code lines wrapped to 80 columns (ssl/record/rec_layer_d1.c). / コード 4 行を 80 桁以内に折り返し (ssl/record/rec_layer_d1.c)。
+  029  five comment lines appended outside an IPALongPatch block (crypto/x509/x509_vfy.c, idp_check_dp()) moved into the block; no code change.
+       / IPALongPatch ブロック外に追記されていたコメント 5 行 (crypto/x509/x509_vfy.c、idp_check_dp()) をブロック内へ移動; コード変更なし。
+  032  test/dtlstest.c includes <sys/time.h> on Unix (struct timeval / gettimeofday()), releases the BIO_METHOD of the fragmenting BIO in cleanup_tests(),
+       one code line wrapped. / test/dtlstest.c が Unix で <sys/time.h> をインクルード (struct timeval / gettimeofday())、分割 BIO の BIO_METHOD を cleanup_tests() で解放、
+       コード 1 行を折り返し。
+  033  patch header only: the Origin line no longer claims a Canonical Ubuntu / upstream origin. / パッチヘッダのみ: Origin 行から Canonical Ubuntu / 上流由来の記載を除去。
+  New error codes were registered in crypto/err/openssl.txt, include/openssl/{dherr,pkcs12err,sslerr,bnerr,asn1err}.h and the *_err.c string tables inside IPALongPatch blocks.
+  / 新しいエラーコードは crypto/err/openssl.txt、include/openssl/{dherr,pkcs12err,sslerr,bnerr,asn1err}.h、*_err.c の文字列表に IPALongPatch ブロック内で登録した。
+
+--- git diff --stat master_before_review master (delta of the amendments) ---
+ crypto/asn1/a_mbstr.c       |   4 +-
+ crypto/asn1/asn1_err.c      |  25 ++++++++++
+ crypto/bn/bn_err.c          |  26 +++++++++++
+ crypto/bn/bn_exp.c          |   2 +-
+ crypto/bn/bn_gf2m.c         |   8 +++-
+ crypto/cms/cms_env.c        |  24 ++++++++--
+ crypto/dh/dh_check.c        |  42 +++++++++--------
+ crypto/dh/dh_err.c          |  46 ++++++++++++++-----
+ crypto/dh/dh_key.c          |  59 ++++++++++++------------
+ crypto/err/openssl.txt      | 108 +++++++++++++++++++++++++++++++++++++++++++-
+ crypto/pkcs12/p12_add.c     |   2 +-
+ crypto/pkcs12/p12_decr.c    |   3 +-
+ crypto/pkcs12/pk12err.c     |  24 ++++++++++
+ crypto/rsa/rsa_pk1.c        |   5 +-
+ crypto/x509/x509_vfy.c      |  15 +++---
+ include/openssl/asn1err.h   |  24 ++++++++++
+ include/openssl/bnerr.h     |  24 ++++++++++
+ include/openssl/dh.h        |   4 +-
+ include/openssl/dherr.h     |  25 +++++++++-
+ include/openssl/pkcs12err.h |  22 +++++++++
+ include/openssl/sslerr.h    |  23 ++++++++++
+ ssl/record/rec_layer_d1.c   |  12 +++--
+ ssl/ssl_err.c               |  25 ++++++++++
+ ssl/ssl_sess.c              |   2 +-
+ test/dtlstest.c             |  65 +++++++++++++++++++++-----
+ 25 files changed, 518 insertions(+), 101 deletions(-)
+
+##### 11-1. Rebuild chain: Linux build, util/ck_errf.pl -strict -internal, full test suite, ASan rebuild, mingw64 rebuild, wine test subset (/home/user/work/rebuild/rebuild_all.sh) / 再ビルドと再テスト
+=== Linux rebuild start 2026/11/02 16:31:26 JST
+linux build exit=0 warnings=0
+=== ck_errf 2026/11/02 16:31:51 JST
+ck_errf exit=0 output_lines=0
+=== make test (Linux, full) start 2026/11/02 16:31:51 JST
+linux test exit=0
+All tests successful.
+Files=159, Tests=2658, 139 wallclock secs ( 1.67 usr  0.30 sys + 121.85 cusr 21.09 csys = 144.91 CPU)
+Result: PASS
+=== ASan rebuild start 2026/11/02 16:34:10 JST
+asan build exit=0
+=== mingw64 rebuild start 2026/11/02 16:34:40 JST
+mingw build exit=0 warnings=67
+=== wine: openssl.exe version 2026/11/02 16:35:45 JST
+OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+=== wine test subset start 2026/11/02 16:35:55 JST
+wine test exit=0
+All tests successful.
+Files=13, Tests=194, 59 wallclock secs ( 0.13 usr  0.02 sys + 18.95 cusr 20.87 csys = 39.97 CPU)
+Result: PASS
+=== done 2026/11/02 16:36:54 JST
+CHAIN_EXIT=0
+
+[EN] The mingw64 build reports the same 67 warnings as before the amendments (all from pristine 1.1.1w sources compiled for Windows); the Linux build has 0 warnings. util/ck_errf.pl -strict -internal produces no output (exit 0), as on pristine 1.1.1w; before the amendments it reported 6 function-code discrepancies.
+[JA] mingw64 ビルドの警告 67 件は修正前と同数 (いずれも素の 1.1.1w のソースを Windows 向けにコンパイルした際のもの); Linux ビルドは警告 0。util/ck_errf.pl -strict -internal は素の 1.1.1w と同様に出力なし (exit 0); 修正前は関数コードの不一致 6 件を報告していた。
+
+##### 11-2. Consistency check (i)/(ii)/(iii) repeated with the regenerated patches (/home/user/work/assemble/verify_iii.sh) / 一致検証の再実施
+=== (i)/(ii)/(iii) consistency check start 2026/11/02 16:34:26 JST
+applied 33 individual patches cleanly (no fuzz/offset/reject messages)
+applied consolidated patch cleanly
+stray .orig/.rej files: 0
+(i) == (ii): IDENTICAL
+(i) == git working tree (iii source): IDENTICAL
+files in (i): 3108; dirs: 161; empty dirs: wycheproof 
+files changed vs pristine: 85 (differ + only-in)
+=== done 2026/11/02 16:34:34 JST (verify3/tree_i and tree_ii refreshed)
+
+
+##### 11-3. Targeted re-checks of the amended code paths, part 1 (/home/user/work/rebuild/rechecks/run_rechecks.sh) / 修正箇所の再確認 (1)
+=== post-review re-checks start 2026/11/02 16:40:06 JST
+
+##### (A) error string tables of the rebuilt library: the new function codes (P-02) resolve to the raising function
++ openssl errstr 0507F067
+  PATCHED: error:0507F067:Diffie-Hellman routines:DH_check_pub_key:modulus too large
+  BASE   : error:0507F067:Diffie-Hellman routines:func(127):modulus too large
++ openssl errstr 23086065
+  PATCHED: error:23086065:PKCS12 routines:PKCS12_unpack_p7encdata:decode error
+  BASE   : error:23086065:PKCS12 routines:func(134):decode error
++ openssl errstr 14281041
+  PATCHED: error:14281041:SSL routines:ssl_session_dup_intern:malloc failure
+  BASE   : error:14281041:SSL routines:func(641):malloc failure
++ openssl errstr 03099066
+  PATCHED: error:03099066:bignum routines:bn_mod_exp_mont_fixed_top:called with even modulus
+  BASE   : error:03099066:bignum routines:func(153):called with even modulus
++ openssl errstr 0D0EA0A3
+  PATCHED: error:0D0EA0A3:asn1 encoding routines:out_utf8:unknown public key type
+  BASE   : error:0D0EA0A3:asn1 encoding routines:func(234):unknown public key type
+
+##### (B) item 001: DH_check_pub_key() error now carries its own function name
++ /home/user/work/poc/001_CVE-2023-5678/dh_large_q_patched checkp 40000 60
+OpenSSL version: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+mode=checkp bits=40000 timeout=60s
+p: 40000 bits (OPENSSL_DH_CHECK_MAX_MODULUS_BITS = 32768), q: 39999 bits
+DH_check_pub_key() returned 0 after 0.001 s
+  check flags = 0x104 PUBKEY_INVALID DH_MODULUS_TOO_LARGE(0x100)
+  DH_check_pub_key: OpenSSL error: error:0507F067:Diffie-Hellman routines:DH_check_pub_key:modulus too large
+  [exit=0]
++ timeout 60 openssl(PATCHED) genpkey -paramfile hugeq_dhx_params.pem
+Error generating key
+140315419765632:error:05067082:Diffie-Hellman routines:generate_key:q too large:../openssl-1.1.1w-ipalongpatch_20261102/crypto/dh/dh_key.c:140:
+  [exit=1]
+
+##### (C) item 002: PKCS12 decode error now reported by PKCS12_unpack_p7encdata()
+/home/user/work/poc/002_CVE-2024-0727/bad_a_authsafes_nocontent.p12
+/home/user/work/poc/002_CVE-2024-0727/bad_b_inner_data_nocontent.p12
+/home/user/work/poc/002_CVE-2024-0727/bad_c_inner_encdata_nocontent.p12
+/home/user/work/poc/002_CVE-2024-0727/good.p12
+/home/user/work/poc/002_CVE-2024-0727/out/good_patched.p12
++ openssl(PATCHED) pkcs12 -in bad_a_authsafes_nocontent.p12 -info -noout -passin pass:
+MAC: sha1, Iteration 2048
+MAC length: 20, salt length: 8
+Mac verify error: invalid password?
+  [exit=1]
++ openssl(PATCHED) pkcs12 -in bad_b_inner_data_nocontent.p12 -info -noout -passin pass:
+MAC: sha1, Iteration 2048
+MAC length: 20, salt length: 8
+Mac verify error: invalid password?
+  [exit=1]
++ openssl(PATCHED) pkcs12 -in bad_c_inner_encdata_nocontent.p12 -info -noout -passin pass:
+MAC: sha1, Iteration 2048
+MAC length: 20, salt length: 8
+Mac verify error: invalid password?
+  [exit=1]
++ openssl(PATCHED) pkcs12 -in good.p12 -info -noout -passin pass:
+MAC: sha1, Iteration 2048
+MAC length: 20, salt length: 8
+Mac verify error: invalid password?
+  [exit=1]
++ openssl(PATCHED) pkcs12 -in good_patched.p12 -info -noout -passin pass:
+MAC: sha1, Iteration 2048
+MAC length: 20, salt length: 8
+Mac verify error: invalid password?
+  [exit=1]
+
+##### (D) item 003: implicit rejection still active (pkeyutl) and CMS RSAES-OAEP decryption leaves the error queue clean (PT-03)
++ PATCHED pkeyutl -decrypt (corrupted ciphertext, implicit rejection: synthetic plaintext, exit 0 expected)
+229
+  [exit=0]
++ PATCHED pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0 (classic error expected)
+140717185256320:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_ossl.c:737:
+  [exit=1]
++ BASE pkeyutl -decrypt (error expected)
+140491897338752:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl req -x509 -newkey rsa:2048 -nodes -keyout /home/user/work/rebuild/rechecks/rk.pem -out /home/user/work/rebuild/rechecks/rc.pem -subj /CN=cms-errq -days 2
+  [exit=1]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -encrypt -in /home/user/work/rebuild/rechecks/m.txt -outform DER -out /home/user/work/rebuild/rechecks/oaep.der -aes128 -recip /home/user/work/rebuild/rechecks/rc.pem -keyopt rsa_padding_mode:oaep
+Can't open /home/user/work/rebuild/rechecks/rc.pem for reading, No such file or directory
+139891980577664:error:02001002:system library:fopen:No such file or directory:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:69:fopen('/home/user/work/rebuild/rechecks/rc.pem','r')
+139891980577664:error:2006D080:BIO routines:BIO_new_file:no such file:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=1]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -encrypt -in /home/user/work/rebuild/rechecks/m.txt -outform DER -out /home/user/work/rebuild/rechecks/pkcs1.der -aes128 -recip /home/user/work/rebuild/rechecks/rc.pem
+Can't open /home/user/work/rebuild/rechecks/rc.pem for reading, No such file or directory
+139908669152128:error:02001002:system library:fopen:No such file or directory:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:69:fopen('/home/user/work/rebuild/rechecks/rc.pem','r')
+139908669152128:error:2006D080:BIO routines:BIO_new_file:no such file:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=1]
+built cms_errq_new (amended library)
++ ./cms_errq_new /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/oaep.der
+input error
+139739104515904:error:20078079:BIO routines:bio_read_intern:unsupported method:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bio_lib.c:256:
+139739104515904:error:0D06B08E:asn1 encoding routines:asn1_d2i_read_bio:not enough data:../openssl-1.1.1w-ipalongpatch_20261102/crypto/asn1/a_d2i_fp.c:125:
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+  [exit=2]
++ ./cms_errq_new /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/pkcs1.der
+input error
+139977784678208:error:20078079:BIO routines:bio_read_intern:unsupported method:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bio_lib.c:256:
+139977784678208:error:0D06B08E:asn1 encoding routines:asn1_d2i_read_bio:not enough data:../openssl-1.1.1w-ipalongpatch_20261102/crypto/asn1/a_d2i_fp.c:125:
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+  [exit=2]
++ CLI: openssl(PATCHED) cms -decrypt (OAEP) - stderr must be empty
+Can't open /home/user/work/rebuild/rechecks/rc.pem for reading, No such file or directory
+140469323783040:error:02001002:system library:fopen:No such file or directory:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:69:fopen('/home/user/work/rebuild/rechecks/rc.pem','r')
+140469323783040:error:2006D080:BIO routines:BIO_new_file:no such file:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=2]
+--- for comparison: the library as it was before the post-review amendments (branch master_before_review, scratch build of libcrypto only)
+old libcrypto built: /home/user/work/rebuild/old_tree/libcrypto.so.1.1
++ ./cms_errq_old /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/oaep.der
+input error
+140412311754560:error:20078079:BIO routines:bio_read_intern:unsupported method:crypto/bio/bio_lib.c:256:
+140412311754560:error:0D06B08E:asn1 encoding routines:asn1_d2i_read_bio:not enough data:crypto/asn1/a_d2i_fp.c:125:
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+  [exit=2]
+
+##### (E) item 004: session cache PoC against the rebuilt library
+make_deliverables.py
+out
+poc_2511.c
+poc_2511_base
+poc_2511_baseasan
+poc_2511_dup.c
+poc_2511_dup_base
+poc_2511_dup_baseasan
+poc_2511_dup_patchasan
+poc_2511_dup_patched
+poc_2511_patchasan
+poc_2511_patched
+regress_cli.sh
+run_poc.sh
+tlshelp.h
++ /home/user/work/poc/004_CVE-2024-2511/poc_2511_dup_patched
+OpenSSL: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+src->not_resumable            = 1
+ssl_session_dup(src,1)->not_resumable  = 0  (internal copy used for the new ticket/session)
+SSL_SESSION_dup(src)->not_resumable    = 1  (public API, expected to keep the flag)
+copy session_id_length = 32 (src 32)
+FIXED: internal duplicate is resumable (not_resumable cleared)
+  [exit=0]
++ /home/user/work/poc/004_CVE-2024-2511/poc_2511_patched
+    cached session 0x557562c14220: session_id_length=32 SSL_SESSION_is_resumable=1
+    cached session 0x557562c4d710: session_id_length=32 SSL_SESSION_is_resumable=1
+    cached session 0x557562c146d0: session_id_length=32 SSL_SESSION_is_resumable=1
+
+RESULT: cache count before fill=2, max during fill=5, final=5, limit=5
+NOT VULNERABLE: session cache stayed within its configured size
+  [exit=0]
+
+##### (F) item 007: GF(2^m) PoC against the rebuilt library (invalid polynomials still rejected)
+START_TIME.txt
+gf2m_poc.c
+gf2m_poc_base
+gf2m_poc_base_asan
+gf2m_poc_patched
+gf2m_poc_patched_asan
+make_deliverables.py
+out
+params.der
+run_poc.sh
++ /home/user/work/poc/007_CVE-2024-9143/gf2m_poc_patched
+unknown case
+OpenSSL version: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+case: 
+  [exit=2]
+
+##### (G) item 032: dtlstest of the rebuilt tree under valgrind (BIO_METHOD leak fix, PT-04)
++ valgrind --leak-check=full dtlstest
+  [exit=0]
+==30404==    definitely lost: 0 bytes in 0 blocks
+==30404==    indirectly lost: 0 bytes in 0 blocks
+==30404== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==30403==    definitely lost: 0 bytes in 0 blocks
+==30403==    indirectly lost: 0 bytes in 0 blocks
+==30403== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+1..7
+    1..2
+ok 1 - test_dtls_unprocessed
+    1..22
+ok 2 - test_dtls_drop_records
+ok 3 - test_cookie
+
+##### (H) item 007: 'no-ec' configuration builds libcrypto (PT-01)
+  no-ec build exit=0 warnings=0 libs: 2
+
+##### (I) item 003: './config --strict-warnings' builds libcrypto and libssl (P-01)
+  strict-warnings build exit=0 warnings=0 errors=0 libs: 2
+
+=== post-review re-checks end 2026/11/02 16:41:33 JST
+RECHECKS_EXIT=0
+
+[EN] Notes on part 1: in (A) the reason code 0xA3 chosen for the ASN1 example resolves to a different reason string, which is irrelevant - the point is the function name (out_utf8); (C) used an empty password by mistake and (D) failed to create the test certificate because 'req' needs -config in an out-of-tree build; (F) was called without a case name. These three checks were repeated correctly in part 2 below.
+[JA] (1) の注記: (A) で ASN1 の例に用いた理由コード 0xA3 は別の理由文字列に解決されるが、関数名 (out_utf8) の確認が目的であり問題ない; (C) は誤って空パスワードを使い、(D) はツリー外ビルドの 'req' が -config を要するため証明書作成に失敗、(F) はケース名なしで呼んでいた。この 3 つは以下の (2) で正しく再実施した。
+
+##### 11-4. Targeted re-checks, part 2 (/home/user/work/rebuild/rechecks/run_rechecks2.sh) / 修正箇所の再確認 (2)
+=== post-review re-checks (part 2) start 2026/11/02 16:45:58 JST
+
+##### (C') item 002: the three malformed PKCS#12 files of the PoC (password 'x'): patched build fails cleanly, the encryptedData variant names PKCS12_unpack_p7encdata()
++ openssl(PATCHED) pkcs12 -in bad_a_authsafes_nocontent.p12 -nodes -passin pass:x -out /dev/null
+Mac verify error: invalid password?
+139879750073216:error:2306B065:PKCS12 routines:PKCS12_gen_mac:decode error:../openssl-1.1.1w-ipalongpatch_20261102/crypto/pkcs12/p12_mutl.c:117:
+139879750073216:error:2307E06D:PKCS12 routines:PKCS12_verify_mac:mac generation error:../openssl-1.1.1w-ipalongpatch_20261102/crypto/pkcs12/p12_mutl.c:188:
+  [exit=1]
++ openssl(PATCHED) pkcs12 -in bad_b_inner_data_nocontent.p12 -nodes -passin pass:x -out /dev/null
+Error outputting keys and certificates
+140196652227456:error:23083065:PKCS12 routines:PKCS12_unpack_p7data:decode error:../openssl-1.1.1w-ipalongpatch_20261102/crypto/pkcs12/p12_add.c:102:
+  [exit=1]
++ openssl(PATCHED) pkcs12 -in bad_c_inner_encdata_nocontent.p12 -nodes -passin pass:x -out /dev/null
+Error outputting keys and certificates
+140012284021632:error:23086065:PKCS12 routines:PKCS12_unpack_p7encdata:decode error:../openssl-1.1.1w-ipalongpatch_20261102/crypto/pkcs12/p12_add.c:185:
+  [exit=1]
++ openssl(PATCHED) pkcs12 -in good.p12 -nodes -passin pass:x -out /dev/null
+  [exit=0]
+
+##### (D') item 003: CMS RSAES-OAEP / PKCS#1 v1.5 decryption and the error queue (PT-03), amended library vs the library before the amendments
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl req -x509 -newkey rsa:2048 -nodes -keyout /home/user/work/rebuild/rechecks/rk.pem -out /home/user/work/rebuild/rechecks/rc.pem -subj /CN=cms-errq -days 2 -config /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/apps/openssl.cnf
+  [exit=0]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -encrypt -in /home/user/work/rebuild/rechecks/m.txt -outform DER -out /home/user/work/rebuild/rechecks/oaep.der -aes128 -recip /home/user/work/rebuild/rechecks/rc.pem -keyopt rsa_padding_mode:oaep
+  [exit=0]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -encrypt -in /home/user/work/rebuild/rechecks/m.txt -outform DER -out /home/user/work/rebuild/rechecks/pkcs1.der -aes128 -recip /home/user/work/rebuild/rechecks/rc.pem
+  [exit=0]
++ ./cms_errq_new /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/oaep.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_decrypt() returned 1, 23 plaintext bytes
+errors left in the error queue after decryption: 0 (clean)
+  [exit=0]
++ ./cms_errq_new /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/pkcs1.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_decrypt() returned 1, 23 plaintext bytes
+errors left in the error queue after decryption: 0 (clean)
+  [exit=0]
+--- the same program linked against the library before the amendments (master_before_review):
++ ./cms_errq_old /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/oaep.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_decrypt() returned 1, 23 plaintext bytes
+errors left in the error queue after decryption: 0 (clean)
+  [exit=0]
++ ./cms_errq_old /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/pkcs1.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_decrypt() returned 1, 23 plaintext bytes
+errors left in the error queue after decryption: 0 (clean)
+  [exit=0]
++ CLI: openssl(PATCHED) cms -decrypt (OAEP message) -- plaintext expected, no error output
+cms error queue check
+  [exit=0]
++ CLI: openssl(PATCHED) cms -decrypt (PKCS#1 v1.5 message)
+cms error queue check
+  [exit=0]
+
+##### (F') item 007: GF(2^m) PoC cases against the rebuilt library (invalid polynomials rejected, valid curve works)
++ gf2m_poc_patched even163_curve
+  a, b: random 400-bit values (EC_GROUP_new_curve_GF2m reduces them mod p)
+  calling EC_GROUP_new_curve_GF2m(p, a, b) ...
+  -> returned NULL (polynomial REJECTED)
+    OpenSSL error: error:100C3083:elliptic curve routines:ec_GF2m_simple_group_set_curve:unsupported field
+case even163_curve finished normally (group NULL)
+  [exit=0]
++ gf2m_poc_patched modmul_api
+  p = 0x0800000000000000000000000000000000000000CA (degree 163, constant term 0 (even: INVALID))
+  calling BN_GF2m_mod_mul(r, a, b, p, ctx) with 163-bit random a, b ...
+  -> BN_GF2m_mod_mul returned 0
+    OpenSSL error: error:0308506A:bignum routines:BN_GF2m_mod_mul:invalid length
+case modmul_api finished normally (group NULL)
+  [exit=0]
++ gf2m_poc_patched valid163
+  calling EC_POINT_mul(group, res, NULL, pt, k) ...
+  -> EC_POINT_mul returned 1
+    (no OpenSSL error queued)
+  result x=0623EEFC4BEE56E7B2A274E514EF81C0999BF3CA0B y=01B042715E4F81078CAFA46934B8843E7F07E65CF3
+case valid163 finished normally (group created)
+  [exit=0]
+
+=== post-review re-checks (part 2) end 2026/11/02 16:45:58 JST
+
+
+##### 11-5. CMS_RecipientInfo_decrypt() error queue before/after the amendment of patch 003 (cms_errq2.c) / パッチ 003 修正前後のエラーキュー比較
+##### (D'') item 003: CMS_RecipientInfo_decrypt() on an RSAES-OAEP recipient - error queue, library before vs after the amendment
++ ./cms_errq2_old rk.pem rc.pem oaep.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_RecipientInfo_decrypt() returned 1
+  stale error in queue: error:0408F08D:rsa routines:pkey_rsa_ctrl:invalid padding mode
+  stale error in queue: error:06089093:digital envelope routines:EVP_PKEY_CTX_ctrl:command not supported
+errors left in the error queue after the successful recipient decryption: 2
+  [exit=0]
++ ./cms_errq2_old rk.pem rc.pem pkcs1.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_RecipientInfo_decrypt() returned 1
+errors left in the error queue after the successful recipient decryption: 0 (clean)
+  [exit=0]
++ ./cms_errq2_new rk.pem rc.pem oaep.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_RecipientInfo_decrypt() returned 1
+errors left in the error queue after the successful recipient decryption: 0 (clean)
+  [exit=0]
++ ./cms_errq2_new rk.pem rc.pem pkcs1.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_RecipientInfo_decrypt() returned 1
+errors left in the error queue after the successful recipient decryption: 0 (clean)
+  [exit=0]
+
+[EN] Result: with the library as it was before the amendment, decrypting an RSAES-OAEP recipient through CMS_RecipientInfo_decrypt() succeeded but left two stale errors (pkey_rsa_ctrl:invalid padding mode, EVP_PKEY_CTX_ctrl:command not supported) in the error queue; with the amended library the queue is clean for both OAEP and PKCS#1 v1.5 recipients. CMS_decrypt() was clean in both cases because CMS_decrypt_set1_pkey() clears the queue itself.
+[JA] 結果: 修正前のライブラリでは RSAES-OAEP 受信者を CMS_RecipientInfo_decrypt() で復号すると成功するものの、エラーキューに無関係なエラー 2 件 (pkey_rsa_ctrl:invalid padding mode、EVP_PKEY_CTX_ctrl:command not supported) が残った。修正後のライブラリでは OAEP、PKCS#1 v1.5 のいずれの受信者でもキューは空である。CMS_decrypt() は CMS_decrypt_set1_pkey() がキューを自らクリアするため修正前後とも空だった。
+
+Verdict of section 11: PASS / 11 節の判定: 合格 - all re-verification steps passed; the amendments are documented in readme.md section 14 and in the addenda of the affected item logs.

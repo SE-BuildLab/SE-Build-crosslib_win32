@@ -1,0 +1,36 @@
+{
+ "nnn": "005",
+ "cve": "CVE-2024-4741",
+ "cveinfo": "SSL-free-buffers-use-after-free",
+ "log_file": "20261102_122048_005of033_CVE-2024-4741_SSL-free-buffers-use-after-free.log",
+ "start_jst": "2026/11/02 12:20:48 (JST)",
+ "end_jst": "2026/11/02 12:27:37 (JST)",
+ "duration": "00:06:49",
+ "verdict": "PASS",
+ "before_en": "SSL_free_buffers() returned 1 after only the record header was received and after a partial SSL_read(); the following SSL_read() read from the freed 16712-byte read buffer: ASan heap-use-after-free READ (memcpy via tls13_enc/tls1_mac in ssl3_get_record, and ssl3_read_bytes rec_layer_s3.c:1430), valgrind 'Invalid read ... inside a block of size 16,712 free'd' (freed by SSL_free_buffers), bogus 'decryption failed or bad record mac' without tools.",
+ "before_ja": "レコードヘッダのみ受信後、および部分的な SSL_read() 後でも SSL_free_buffers() が 1 を返し、続く SSL_read() が解放済み 16712 バイト読みバッファを読む: ASan heap-use-after-free READ (ssl3_get_record 内 tls13_enc/tls1_mac 経由の memcpy、および ssl3_read_bytes rec_layer_s3.c:1430)、valgrind 'Invalid read ... inside a block of size 16,712 free'd' (解放元 SSL_free_buffers)、ツール無しでは偽の 'decryption failed or bad record mac'。",
+ "after_en": "Patched SSL_free_buffers() returns 0 in both states (RECORD_LAYER_data_present()); the data is read intact afterwards; no ASan report; valgrind 0 errors, no leaks.",
+ "after_ja": "修正版の SSL_free_buffers() は両状態で 0 を返し (RECORD_LAYER_data_present())、その後データは無傷で読める。ASan 報告無し、valgrind エラー 0・リーク無し。",
+ "method_en": "C PoC with memory-BIO TLS 1.2 (AES128-SHA) and TLS 1.3 (AES-256-GCM) connections: server writes a record, the raw record is fed to the client in pieces (header only / full record with 1-byte application read), SSL_free_buffers() is called, then the read is completed; run on BASE, BASE-ASAN, PATCHED, PATCHED-ASAN plus valgrind.",
+ "method_ja": "メモリ BIO の TLS 1.2 (AES128-SHA) / TLS 1.3 (AES-256-GCM) 接続を使う C PoC: サーバがレコードを書き、生レコードをクライアントへ小分けに与え (ヘッダのみ / 全レコード+1 バイトのアプリ読み出し)、SSL_free_buffers() を呼んでから読み出しを完了させる。BASE, BASE-ASAN, PATCHED, PATCHED-ASAN と valgrind で実行。",
+ "regression_en": "Scenario 0 on all builds: SSL_free_buffers() returns 1 when nothing is pending and three further bidirectional exchanges succeed; upstream test/sslbuffertest passes on BASE, PATCHED and PATCHED-ASAN.",
+ "regression_ja": "全ビルドでのシナリオ 0: 保留無しなら SSL_free_buffers() が 1 を返し、その後の双方向 3 往復も成功。上流 test/sslbuffertest は BASE, PATCHED, PATCHED-ASAN で合格。",
+ "tools": [
+  "gcc",
+  "AddressSanitizer",
+  "valgrind memcheck",
+  "upstream test/sslbuffertest",
+  "bash",
+  "python3 (deliverable generation)"
+ ],
+ "poc_files": [
+  "/home/user/work/poc/005_CVE-2024-4741/poc_4741.c",
+  "/home/user/work/poc/005_CVE-2024-4741/tlshelp.h",
+  "/home/user/work/poc/005_CVE-2024-4741/run_poc.sh",
+  "/home/user/work/poc/005_CVE-2024-4741/make_deliverables.py",
+  "/home/user/work/poc/005_CVE-2024-4741/mkdeliv.py",
+  "/home/user/work/poc/005_CVE-2024-4741/out/"
+ ],
+ "limitations_en": "Requires an application that calls SSL_free_buffers(); in scenario 2 the stale data is intact without sanitizers, so the memory-safety symptom there is shown via ASan/valgrind only.",
+ "limitations_ja": "SSL_free_buffers() を呼ぶアプリケーションが前提。シナリオ 2 はサニタイザ無しでは古いデータが無傷のため、メモリ安全性の症状は ASan/valgrind でのみ示した。"
+}

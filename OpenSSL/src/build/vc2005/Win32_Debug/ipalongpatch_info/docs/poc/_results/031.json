@@ -1,0 +1,42 @@
+{
+  "nnn": "031",
+  "cve": "CVE-2026-77696",
+  "cveinfo": "SM2-sig-gen-timing-side-channel",
+  "log_file": "20261102_123554_031of033_CVE-2026-77696_SM2-sig-gen-timing-side-channel.log",
+  "start_jst": "2026/11/02 12:35:54",
+  "end_jst": "2026/11/02 12:55:43",
+  "duration": "00:19:49",
+  "verdict": "PASS",
+  "before_en": "gdb call tracing (sm2_calls.py) during two SM2 signatures: sm2_sig_gen() calls the variable-time BN_mod_mul() (sm2_sign.c:257, :259, each reaching BN_nnmod -> BN_div), BN_sub() (:258) and BN_cmp() (:252) directly on the nonce / private key, and an extra BN_add() inside BN_nnmod() executed for only one of the two signatures (negative k - r*dA). Isolated s computation with the unpatched operation sequence: median 954 vs 940 ns (BASE binary, +14 ns) and 936 vs 916 ns (PATCHED binary, +20 ns) for one-word vs full-size nonces, n=2000/class, min of 5.",
+  "before_ja": "2 つの SM2 署名中の gdb 呼び出しトレース (sm2_calls.py): sm2_sig_gen() はノンス / 秘密鍵に対して可変時間の BN_mod_mul() (sm2_sign.c:257, :259、いずれも BN_nnmod -> BN_div に到達)、BN_sub() (:258)、BN_cmp() (:252) を直接呼び、BN_nnmod() 内の余分な BN_add() は 2 署名のうち 1 つだけで実行された (k - r*dA が負)。未パッチの演算列による単離した s 計算: 1 ワード対フルサイズのノンスで中央値 954 対 940 ns (BASE バイナリ、+14 ns)、936 対 916 ns (PATCHED バイナリ、+20 ns)、クラスごとに n=2000、5 回の最小値。",
+  "after_en": "gdb: sm2_sig_gen() calls no BN_mod_mul/BN_cmp/BN_div on secrets; it calls bn_set_top_fixed (:342, :360), BN_sub on public n - r (:359), CRYPTO_memcmp (:365) and bn_to_mont_fixed_top / bn_mul_mont_fixed_top / bn_mod_sub_fixed_top / BN_mod_mul_montgomery (:385-389), identically for both signatures. Patched arithmetic sequence: 272 vs 271 ns and 273 vs 273 ns (0/+1 ns class difference), results identical to the old arithmetic (0 mismatches in 8000 samples), ~3.4x faster.",
+  "after_ja": "gdb: sm2_sig_gen() は秘密値に対して BN_mod_mul/BN_cmp/BN_div を呼ばず、bn_set_top_fixed (:342, :360)、公開値 n - r への BN_sub (:359)、CRYPTO_memcmp (:365)、bn_to_mont_fixed_top / bn_mul_mont_fixed_top / bn_mod_sub_fixed_top / BN_mod_mul_montgomery (:385〜389) を両署名で同一に呼ぶ。パッチ版の算術列: 272 対 271 ns、273 対 273 ns (クラス差 0/+1 ns)、結果は旧算術と同一 (8000 サンプルで不一致 0)、約 3.4 倍高速。",
+  "method_en": "poc_sm2.c statically linked against each build's libcrypto.a: sign N (gdb driver, EVP_DigestSign with SM3 and distid), arith N REPS (isolated s = (1+dA)^-1 (k - r dA) mod n with the unpatched sequence BN_mod_mul/BN_sub/BN_mod_mul and the patched fixed-top Montgomery sequence, 1-word vs 4-word nonces, interleaved, min of REPS, result comparison), timing N, regress N, keygen/signfile/verifyfile for cross-build checks; gdb Python script sm2_calls.py with internal breakpoints on 16 BIGNUM primitives recording call chains into sm2_sig_gen(); valgrind; make test TESTS='test_internal_sm2 test_evp' on the patched build.",
+  "method_ja": "poc_sm2.c を各ビルドの libcrypto.a に静的リンク: sign N (gdb 駆動用、SM3 と distid による EVP_DigestSign)、arith N REPS (s = (1+dA)^-1 (k - r dA) mod n を未パッチの演算列 BN_mod_mul/BN_sub/BN_mod_mul とパッチ版の fixed-top Montgomery 演算列で単離計測、1 ワード対 4 ワードノンス、交互、REPS 回の最小値、結果比較)、timing N、regress N、ビルド間確認用の keygen/signfile/verifyfile; 16 個の BIGNUM プリミティブに内部ブレークポイントを置き sm2_sig_gen() への呼び出し連鎖を記録する gdb Python スクリプト sm2_calls.py; valgrind; パッチ版ビルドでの make test TESTS='test_internal_sm2 test_evp'。",
+  "regression_en": "Both builds: regress 50 -> 50/50 verified, 50/50 tampered rejected; sign 2 -> 2/2 verified. Cross-build: unpatched signature verified by patched build and vice versa ('Verified OK' x2), tampered message / wrong key rejected ('VERIFICATION FAILURE' x2). valgrind on patched PoC: regress 3 and arith 20 2 -> 0 errors, no leaks. Patched tree make test test_internal_sm2 + test_evp: PASS (11 tests); full make test (2658 tests) passed earlier. CLI SM2 signing is unavailable in the 1.1.1 openssl tool on both builds (not a regression).",
+  "regression_ja": "両ビルド: regress 50 -> 50/50 検証成功、改変 50/50 拒否; sign 2 -> 2/2 検証成功。ビルド間: 未パッチ版の署名をパッチ版が検証、逆も成功 ('Verified OK' x2)、改変メッセージ / 誤った鍵は拒否 ('VERIFICATION FAILURE' x2)。パッチ版 PoC への valgrind: regress 3 と arith 20 2 -> 0 errors、リーク無し。パッチ版ツリーの make test test_internal_sm2 + test_evp: PASS (11 テスト); 完全な make test (2658 テスト) は事前に合格。1.1.1 の openssl ツールでは両ビルドとも CLI からの SM2 署名ができない (回帰ではない)。",
+  "tools": [
+    "gcc (static link against libcrypto.a, internal headers incl. crypto/bn/bn_local.h)",
+    "gdb 15.1 with Python API (internal breakpoints, call-chain recording)",
+    "clock_gettime(CLOCK_MONOTONIC) component timing, interleaved classes, min of 5, quartiles/sd",
+    "valgrind --leak-check=full",
+    "OpenSSL test recipes test_internal_sm2 and test_evp (patched build)"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/031_CVE-2026-77696/poc_sm2.c",
+    "/home/user/work/poc/031_CVE-2026-77696/sm2_calls.py",
+    "/home/user/work/poc/031_CVE-2026-77696/raw_gdb_base.txt",
+    "/home/user/work/poc/031_CVE-2026-77696/raw_gdb_patched.txt",
+    "/home/user/work/poc/031_CVE-2026-77696/raw_arith_base.txt",
+    "/home/user/work/poc/031_CVE-2026-77696/raw_arith_patched.txt",
+    "/home/user/work/poc/031_CVE-2026-77696/raw_rest.txt",
+    "/home/user/work/poc/031_CVE-2026-77696/run_rest.sh",
+    "/home/user/work/poc/031_CVE-2026-77696/raw_cross_and_tests.txt",
+    "/home/user/work/poc/031_CVE-2026-77696/valgrind_patched.txt",
+    "/home/user/work/poc/031_CVE-2026-77696/valgrind_arith_patched.txt",
+    "/home/user/work/poc/031_CVE-2026-77696/msg.txt",
+    "/home/user/work/poc/031_CVE-2026-77696/make_log.py"
+  ],
+  "limitations_en": "The nonce is generated inside sm2_sig_gen(), so whole-signature timings cannot be split by nonce class and were taken under heavy, varying load (informative only; the BASE and PATCHED medians are not comparable). The class-dependent cost of the old arithmetic was measured in isolation on the s computation (+14/+20 ns, about 5 standard errors of the median) with artificially small one-word nonces; the structural gdb evidence is the primary demonstration. bn_set_top_fixed() is emulated in the PoC for the unpatched library. The 1.1.1 command-line tool cannot sign with SM2 (dgst: 'invalid digest type', pkeyutl has no -rawin), so no CLI check exists; a first test recipe run used the wrong name test_sm2_internal (NOTESTS) and was corrected to test_internal_sm2. The verification subagent was terminated before the regression checks; the orchestrator completed them and assembled the log from the unaltered captures.",
+  "limitations_ja": "ノンスは sm2_sig_gen() 内部で生成されるため署名全体のタイミングはノンスのクラスで分けられず、負荷が大きく変動する状況で取得した (参考情報; BASE と PATCHED の中央値は比較不能)。旧算術のクラス依存コストは s 計算のみを単離し、人工的に小さい 1 ワードノンスで計測した (+14/+20 ns、中央値の標準誤差の約 5 倍)。主たる実証は gdb の構造的証拠である。bn_set_top_fixed() は未パッチ版ライブラリ向けに PoC 内で模倣した。1.1.1 のコマンドラインツールは SM2 で署名できない (dgst: 'invalid digest type'、pkeyutl に -rawin 無し) ため CLI 確認は無い。テストレシピの初回実行は誤った名前 test_sm2_internal (NOTESTS) で、test_internal_sm2 に修正した。検証サブエージェントは回帰確認の前に停止し、統括セッションがそれらを完了して改変なしの出力からログを組み立てた。"
+}

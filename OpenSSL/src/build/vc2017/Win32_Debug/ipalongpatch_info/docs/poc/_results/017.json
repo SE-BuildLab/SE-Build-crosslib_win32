@@ -1,0 +1,40 @@
+{
+  "nnn": "017",
+  "cve": "CVE-2026-28387",
+  "cveinfo": "DANE-match-cert-wrong-free-UAF",
+  "log_file": "20261102_124214_017of033_CVE-2026-28387_DANE-match-cert-wrong-free-UAF.log",
+  "start_jst": "2026/11/02 12:42:14",
+  "end_jst": "2026/11/02 13:04:19",
+  "duration": "00:22:05",
+  "verdict": "PASS",
+  "before_en": "With TLSA records PKIX-EE(1) full ee-cert + DANE-TA(2) full ca-cert, X509_verify_cert() on the chain [ee-cert, ca-cert] triggers ASan heap-use-after-free (READ in check_chain_extensions x509_vfy.c:489) of the 352-byte ee-cert X509 object freed by CRYPTO_free in dane_match (x509_vfy.c:2764) via check_dane_issuer/build_chain; same for PKIX-TA(0)+DANE-TA(2) with the root in the peer chain; gdb shows OPENSSL_free() applied to a live X509 with references = 4; valgrind reports many invalid reads of the freed block; a real openssl s_client handshake (BASE-ASAN) with the same -dane_tlsa_rrdata records reports the same heap-use-after-free from tls_process_server_certificate.",
+  "before_ja": "TLSA レコード PKIX-EE(1) ee-cert 全体 + DANE-TA(2) ca-cert 全体で、チェーン [ee-cert, ca-cert] の X509_verify_cert() が ASan heap-use-after-free (check_chain_extensions x509_vfy.c:489 での READ) を発生: check_dane_issuer/build_chain 経由の dane_match (x509_vfy.c:2764) の CRYPTO_free で解放された 352 バイトの ee-cert X509 オブジェクト; root をピアチェーンに含めた PKIX-TA(0)+DANE-TA(2) でも同様; gdb は references = 4 の生きた X509 に OPENSSL_free() が適用されることを示す; valgrind は解放ブロックへの多数の不正読み出しを報告; 同じ -dane_tlsa_rrdata レコードでの実際の openssl s_client ハンドシェイク (BASE-ASAN) も tls_process_server_certificate からの同じ heap-use-after-free を報告。",
+  "after_en": "Same records on PATCHED(-ASAN): X509_verify_cert() returns 1, DANE-TA matched at depth 1 (mcert = /CN=CA), no ASan report, valgrind clean; s_client reports 'DANE TLSA 2 0 0 ... matched TA certificate at depth 1' and 'Verify return code: 0 (ok)'.",
+  "after_ja": "同じレコードを PATCHED(-ASAN) で: X509_verify_cert() は 1 を返し、DANE-TA が深さ 1 でマッチ (mcert = /CN=CA)、ASan 報告なし、valgrind 問題なし; s_client は 'DANE TLSA 2 0 0 ... matched TA certificate at depth 1' と 'Verify return code: 0 (ok)' を報告。",
+  "method_en": "C program dane_uaf.c (SSL_CTX_dane_enable/SSL_dane_enable/SSL_dane_tlsa_add + X509_verify_cert with X509_STORE_CTX_set0_dane, like test/danetest.c) on test/certs ee/ca/root certificates; built for BASE-ASAN, PATCHED-ASAN, BASE (gdb conditional breakpoint at x509_vfy.c:2764, valgrind) and PATCHED; real openssl s_server/s_client -dane_tlsa_rrdata handshake with the ASan builds; run_poc.sh.",
+  "method_ja": "test/certs の ee/ca/root 証明書に対する C プログラム dane_uaf.c (SSL_CTX_dane_enable/SSL_dane_enable/SSL_dane_tlsa_add + X509_STORE_CTX_set0_dane 付き X509_verify_cert、test/danetest.c と同様); BASE-ASAN、PATCHED-ASAN、BASE (x509_vfy.c:2764 の gdb 条件付きブレークポイント、valgrind)、PATCHED 向けにビルド; ASan ビルドでの実際の openssl s_server/s_client -dane_tlsa_rrdata ハンドシェイク; run_poc.sh。",
+  "regression_en": "PATCHED-ASAN: DANE-EE(3) SPKI SHA-256 and Cert SHA-512, DANE-TA(2) SPKI SHA-256, PKIX-EE(1) alone all verify; corrupted record fails with 'No matching DANE TLSA records' (error 65); patched test/danetest: ok 1 - run_tlsatest.",
+  "regression_ja": "PATCHED-ASAN: DANE-EE(3) の SPKI SHA-256 と Cert SHA-512、DANE-TA(2) の SPKI SHA-256、PKIX-EE(1) 単独がすべて検証成功; 破損レコードは 'No matching DANE TLSA records' (エラー 65) で失敗; 修正済み test/danetest: ok 1 - run_tlsatest。",
+  "tools": [
+    "gcc",
+    "AddressSanitizer (BASE-ASAN / PATCHED-ASAN builds)",
+    "gdb",
+    "valgrind",
+    "openssl s_server/s_client (ASan builds)",
+    "test/danetest (patched build)"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/017_CVE-2026-28387/dane_uaf.c",
+    "/home/user/work/poc/017_CVE-2026-28387/run_poc.sh",
+    "/home/user/work/poc/017_CVE-2026-28387/ee-cert.pem",
+    "/home/user/work/poc/017_CVE-2026-28387/ee-key.pem",
+    "/home/user/work/poc/017_CVE-2026-28387/ca-cert.pem",
+    "/home/user/work/poc/017_CVE-2026-28387/root-cert.pem",
+    "/home/user/work/poc/017_CVE-2026-28387/out/run_poc_full.txt",
+    "/home/user/work/poc/017_CVE-2026-28387/out/run_poc_full_attempt1.txt",
+    "/home/user/work/poc/017_CVE-2026-28387/out/run_poc_full_attempt2.txt",
+    "/home/user/work/poc/017_CVE-2026-28387/out/cli_s_client_BA.txt"
+  ],
+  "limitations_en": "The plain (non-ASan) build does not crash within the short PoC (freed memory not reused, leaked reference prevents the final double free); ASan/valgrind and the real s_client handshake give deterministic evidence. Only the advisory's PKIX+DANE-TA trigger combinations were exercised. Earlier run_poc.sh runs had script-side check issues only; all outputs kept.",
+  "limitations_ja": "素の (非 ASan) ビルドは短い PoC 内ではクラッシュしない (解放メモリ未再利用、漏れた参照で最後の二重解放に至らず); 決定的証拠は ASan/valgrind と実際の s_client ハンドシェイク。試したのはアドバイザリの PKIX+DANE-TA の組み合わせのみ。以前の run_poc.sh 実行はスクリプト側チェックの問題のみ; 全出力を保持。"
+}

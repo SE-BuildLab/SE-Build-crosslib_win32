@@ -1,0 +1,37 @@
+{
+  "nnn": "014",
+  "cve": "CVE-2025-69421",
+  "cveinfo": "PKCS12-item-decrypt-NULL-deref",
+  "log_file": "20261102_121856_014of033_CVE-2025-69421_PKCS12-item-decrypt-NULL-deref.log",
+  "start_jst": "2026/11/02 12:18:56 (JST)",
+  "end_jst": "2026/11/02 12:27:22 (JST)",
+  "duration": "00:08:26",
+  "verdict": "PASS",
+  "before_en": "Unpatched 1.1.1w: SIGSEGV in PKCS12_item_decrypt_d2i (p12_decr.c:91, oct=0x0) called from PKCS12_unpack_p7encdata (p12_add.c:135) for a PKCS#12 whose pkcs7-encryptedData lacks encryptedContent, via openssl pkcs12, PKCS12_parse, PKCS12_newpass and PKCS12_unpack_*; ASan reports SEGV on address 0x0 (4/4).",
+  "before_ja": "未修正 1.1.1w: pkcs7-encryptedData に encryptedContent が無い PKCS#12 で、PKCS12_unpack_p7encdata (p12_add.c:135) から呼ばれた PKCS12_item_decrypt_d2i (p12_decr.c:91、oct=0x0) で SIGSEGV。openssl pkcs12、PKCS12_parse、PKCS12_newpass、PKCS12_unpack_* 経由。ASan はアドレス 0x0 の SEGV を報告 (4/4)。",
+  "after_en": "Patched build: 'PKCS12_item_decrypt_d2i:passed a null parameter' error, exit 1, no crash, no ASan report (8/8 CLI+API runs).",
+  "after_ja": "修正版: 'PKCS12_item_decrypt_d2i:passed a null parameter' エラーで exit 1、クラッシュ・ASan 報告無し (CLI+API 8/8 回)。",
+  "method_en": "Default openssl pkcs12 -export file; Python DER re-encoder removes the [0] IMPLICIT encryptedContent and recomputes the MAC; openssl pkcs12 and a C API program on BASE/BASE-ASAN/PATCHED/PATCHED-ASAN; gdb; valgrind.",
+  "method_ja": "既定の openssl pkcs12 -export ファイルから Python の DER 再エンコーダで [0] IMPLICIT encryptedContent を削除し MAC を再計算。openssl pkcs12 と C の API プログラムで BASE/BASE-ASAN/PATCHED/PATCHED-ASAN を試験、gdb、valgrind。",
+  "regression_en": "good.p12 import/-info, PKCS12_parse/newpass/unpack, export+re-import succeed on the patched build; wrong password still rejected; valgrind clean.",
+  "regression_ja": "修正版で good.p12 の取り込み/-info、PKCS12_parse/newpass/unpack、エクスポート+再取り込みが成功。誤パスワードは引き続き拒否。valgrind クリーン。",
+  "tools": [
+    "openssl pkcs12 (BASE/PATCHED)",
+    "python3 -I (make_bad.py)",
+    "gcc",
+    "gdb",
+    "AddressSanitizer",
+    "valgrind"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/014_CVE-2025-69421/make_bad.py",
+    "/home/user/work/poc/014_CVE-2025-69421/poc_api.c",
+    "/home/user/work/poc/014_CVE-2025-69421/build.sh",
+    "/home/user/work/poc/014_CVE-2025-69421/run_poc.sh",
+    "/home/user/work/poc/014_CVE-2025-69421/good.p12",
+    "/home/user/work/poc/014_CVE-2025-69421/bad_no_encryptedcontent.p12",
+    "/home/user/work/poc/014_CVE-2025-69421/out/ (raw captures)"
+  ],
+  "limitations_en": "Only the pkcs7-encryptedData path can supply a NULL oct from a file (X509_SIG digest is mandatory for shrouded key bags).",
+  "limitations_ja": "ファイルから NULL の oct を与えられるのは pkcs7-encryptedData 経路のみ (shrouded key bag の X509_SIG digest は必須)。"
+}

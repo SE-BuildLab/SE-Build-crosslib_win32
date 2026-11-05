@@ -1,0 +1,169 @@
+﻿1..1
+    # Subtest: run_file_tests
+    1..1
+    # INFO:  @ test/testutil/stanza.c:21
+    # Reading /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "RSA tests" tests at line 131
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:377: Source of above error; unexpected error PKEY_CTRL_INVALID
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:384: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2389
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:390: Expected KEYOP_ERROR got PKEY_CTRL_INVALID
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:496: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:501: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:506: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:511: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:551: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:557: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:563: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:570: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:577: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:584: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:591: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:597: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:603: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:609: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:615: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:667: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:697: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:702: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:707: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:769: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:775: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:780: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:810: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:816: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:822: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:827: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:832: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:837: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:842: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/evp_test.c:2377
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:847: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "EC tests" tests at line 1056
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "DSA tests" tests at line 1118
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "X25519 test vectors (from RFC7748 6.1)" tests at line 1171
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "X448 test vectors (from RFC7748 6.2)" tests at line 1239
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "RSA PSS/OAEP (from RSASecurity FTP)" tests at line 1314
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "ECDH tests (with random keys)" tests at line 2319
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "ECDH KATs (from RFC 5114, 5903, 7027)" tests at line 5874
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "ECDH KATs (from NIST SP800-56A co-factor ECDH KATs" tests at line 6374
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "Test keypair mismatches" tests at line 17758
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "DigestSign and DigestVerify" tests at line 17865
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "ED25519 tests from RFC8032" tests at line 17925
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "ED448 tests from RFC8032" tests at line 18078
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "RFC7919 DH tests" tests at line 18328
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "SM2 tests" tests at line 18885
+    # INFO:  @ test/testutil/stanza.c:121
+    # Starting "Chosen Wycheproof vectors" tests at line 18933
+    # INFO:  @ test/testutil/stanza.c:32
+    # Completed 1499 tests with 33 errors and 0 skipped
+    not ok 1 - /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt
+not ok 1 - run_file_tests

@@ -1,0 +1,40 @@
+{
+ "nnn": "027",
+ "cve": "CVE-2026-54874",
+ "cveinfo": "DTLS-future-epoch-buffer-memDoS",
+ "log_file": "20261102_124251_027of033_CVE-2026-54874_DTLS-future-epoch-buffer-memDoS.log",
+ "start_jst": "2026/11/02 12:42:51 (JST)",
+ "end_jst": "2026/11/02 13:06:05 (JST)",
+ "duration": "00:23:14",
+ "verdict": "PASS",
+ "before_en": "120 forged epoch-1 records (29 bytes each, 3,480 bytes) sent during the handshake grew the unpatched server's heap by 1,690,800 bytes (100 queued records x 16,908 bytes; VmData 400->2128 kB); gdb on s_server: 101 ssl3_setup_read_buffer() calls, queue size reaches 100.",
+ "before_ja": "ハンドシェイク中に送った偽造エポック 1 レコード 120 個 (各 29 バイト、計 3,480 バイト) で未修正サーバのヒープが 1,690,800 バイト増加 (待ち行列 100 レコード × 16,908 バイト; VmData 400→2128 kB); s_server の gdb: ssl3_setup_read_buffer() 101 回、待ち行列サイズ 100 到達。",
+ "after_en": "Patched server heap grows by 2,608 bytes only (16 record copies, DTLS1_MAX_UNPROCESSED_RECORDS=16), no new read buffer allocations (1 ssl3_setup_read_buffer call in s_server), VmData unchanged, ASan clean, valgrind 0 errors/no leaks.",
+ "after_ja": "修正版サーバのヒープ増加は 2,608 バイトのみ (レコード複製 16 個、DTLS1_MAX_UNPROCESSED_RECORDS=16)、新規読みバッファ確保無し (s_server で ssl3_setup_read_buffer 1 回)、VmData 不変、ASan クリーン、valgrind エラー 0・リーク無し。",
+ "method_en": "Python UDP client sends a DTLS 1.2 ClientHello then 120 forged next-epoch handshake records; C DTLS server (BIO_new_dgram, non-blocking) measures mallinfo2()/VmRSS/VmData before and after; stock s_server -dtls1_2 cross-checked under gdb with breakpoints on dtls1_buffer_record and ssl3_setup_read_buffer; ASan builds and valgrind for sanity.",
+ "method_ja": "Python の UDP クライアントが DTLS 1.2 ClientHello に続けて偽造次エポック handshake レコード 120 個を送信; C の DTLS サーバ (BIO_new_dgram、非ブロッキング) が前後の mallinfo2()/VmRSS/VmData を計測; 標準 s_server -dtls1_2 を gdb (dtls1_buffer_record と ssl3_setup_read_buffer にブレークポイント) で相互確認; ASan ビルドと valgrind で健全性確認。",
+ "regression_en": "DTLS 1.2 s_client<->s_server handshakes with application data succeed for patched/patched, patched server + unpatched client and unpatched server + patched client (Protocol: DTLSv1.2, data received).",
+ "regression_ja": "DTLS 1.2 の s_client↔s_server ハンドシェイクとアプリケーションデータ送受信が、修正版/修正版、修正版サーバ+未修正クライアント、未修正サーバ+修正版クライアントで成功 (Protocol: DTLSv1.2、データ受信)。",
+ "tools": [
+  "python3 -I (UDP client)",
+  "gcc",
+  "mallinfo2/proc status",
+  "gdb",
+  "valgrind",
+  "AddressSanitizer",
+  "openssl s_server/s_client",
+  "bash"
+ ],
+ "poc_files": [
+  "/home/user/work/poc/027_CVE-2026-54874/dtls_client.py",
+  "/home/user/work/poc/027_CVE-2026-54874/dtls_server.c",
+  "/home/user/work/poc/027_CVE-2026-54874/gdb_dtls.cmd",
+  "/home/user/work/poc/027_CVE-2026-54874/run_poc.sh",
+  "/home/user/work/poc/027_CVE-2026-54874/regress.sh",
+  "/home/user/work/poc/027_CVE-2026-54874/make_deliverables.py",
+  "/home/user/work/poc/027_CVE-2026-54874/mkdeliv.py",
+  "/home/user/work/poc/027_CVE-2026-54874/out/"
+ ],
+ "limitations_en": "Memory is measured per connection in-process (mallinfo2); the effect is bounded per connection (100 records), so the DoS needs many connections. RSS alone under-reports because the stolen buffers are mostly untouched pages.",
+ "limitations_ja": "メモリは接続単位でプロセス内計測 (mallinfo2)。接続あたりの影響は有界 (100 レコード) のため DoS には多数の接続が必要。奪われたバッファの大半が未使用ページのため RSS 単独では過小に見える。"
+}

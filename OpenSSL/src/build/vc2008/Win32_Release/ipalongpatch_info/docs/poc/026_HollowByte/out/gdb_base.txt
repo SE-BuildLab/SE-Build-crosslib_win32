@@ -1,0 +1,20 @@
+﻿Breakpoint 1 at 0x53c38: file apps/openssl.c, line 120.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Breakpoint 1, main (argc=8, argv=0x7fffffffc3d8) at apps/openssl.c:120
+120	{
+Breakpoint 2 at 0x7ffff7aee462: file crypto/buffer/buffer.c, line 115.
+Using default temp DH parameters
+ACCEPT
+
+Breakpoint 2, BUF_MEM_grow_clean (str=0x5555556e1770, len=131076) at crypto/buffer/buffer.c:115
+115	    if (str->length >= len) {
+HIT 1: BUF_MEM_grow_clean(str->max=21848, len=131076) -> allocation will be (len+3)/3*4 = 174772 bytes
+#0  BUF_MEM_grow_clean (str=0x5555556e1770, len=131076) at crypto/buffer/buffer.c:115
+#1  0x00007ffff7f67aee in grow_init_buf (s=0x55555570cb00, size=131076) at ssl/statem/statem.c:501
+#2  0x00007ffff7f67d9b in read_state_machine (s=0x55555570cb00) at ssl/statem/statem.c:610
+#3  0x00007ffff7f678e9 in state_machine (s=0x55555570cb00, server=1) at ssl/statem/statem.c:434
+#4  0x00007ffff7f67406 in ossl_statem_accept (s=0x55555570cb00) at ssl/statem/statem.c:255
+#5  0x00007ffff7f4bf50 in SSL_do_handshake (s=0x55555570cb00) at ssl/ssl_lib.c:3732
+ERROR

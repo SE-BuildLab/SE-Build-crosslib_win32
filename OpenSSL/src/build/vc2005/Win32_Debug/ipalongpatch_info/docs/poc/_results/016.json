@@ -1,0 +1,37 @@
+{
+  "nnn": "016",
+  "cve": "CVE-2026-22796",
+  "cveinfo": "PKCS7-digest-attr-type-confusion",
+  "log_file": "20261102_121857_016of033_CVE-2026-22796_PKCS7-digest-attr-type-confusion.log",
+  "start_jst": "2026/11/02 12:18:57 (JST)",
+  "end_jst": "2026/11/02 12:38:29 (JST)",
+  "duration": "00:19:32",
+  "verdict": "PASS",
+  "before_en": "Unpatched 1.1.1w: 'openssl smime -verify' SIGSEGV in PKCS7_signatureVerify (pk7_doit.c:1009) reading message_digest->length with message_digest = 0xff when the messageDigest attribute is BOOLEAN; ASan SEGV on address 0xff.",
+  "before_ja": "未修正 1.1.1w: messageDigest 属性が BOOLEAN のとき 'openssl smime -verify' が PKCS7_signatureVerify (pk7_doit.c:1009) で message_digest = 0xff の message_digest->length を読み SIGSEGV。ASan はアドレス 0xff の SEGV。",
+  "after_en": "Patched build: 'PKCS7_signatureVerify:unable to find message digest', Verification failure, exit 4, no crash/ASan report for BOOLEAN, NULL and INTEGER variants.",
+  "after_ja": "修正版: BOOLEAN、NULL、INTEGER 変種すべてで 'PKCS7_signatureVerify:unable to find message digest'、Verification failure、exit 4。クラッシュ・ASan 報告無し。",
+  "method_en": "Opaque signed PKCS#7 (DER) from openssl smime -sign -nodetach; Python DER re-encoder replaces the messageDigest value type; openssl smime -verify -noverify on BASE/BASE-ASAN/PATCHED/PATCHED-ASAN; gdb; valgrind.",
+  "method_ja": "openssl smime -sign -nodetach で opaque 署名 PKCS#7 (DER) を作り、Python の DER 再エンコーダで messageDigest 値の型を置換。openssl smime -verify -noverify を BASE/BASE-ASAN/PATCHED/PATCHED-ASAN で実行、gdb、valgrind。",
+  "regression_en": "good.p7 verifies (content identical, with -CAfile, under ASan); patched sign+verify (S/MIME, detached DER) succeed; tampered content detected; valgrind clean.",
+  "regression_ja": "good.p7 の検証成功 (内容一致、-CAfile、ASan 下)。修正版での署名+検証 (S/MIME、分離 DER) 成功。改ざん検出も維持。valgrind クリーン。",
+  "tools": [
+    "openssl smime (BASE/PATCHED)",
+    "python3 -I (make_bad.py)",
+    "gdb",
+    "AddressSanitizer",
+    "valgrind"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/016_CVE-2026-22796/make_bad.py",
+    "/home/user/work/poc/016_CVE-2026-22796/run_poc.sh",
+    "/home/user/work/poc/016_CVE-2026-22796/good.p7",
+    "/home/user/work/poc/016_CVE-2026-22796/bad_bool.p7",
+    "/home/user/work/poc/016_CVE-2026-22796/bad_null.p7",
+    "/home/user/work/poc/016_CVE-2026-22796/bad_int.p7",
+    "/home/user/work/poc/016_CVE-2026-22796/bad_tampered_content.p7",
+    "/home/user/work/poc/016_CVE-2026-22796/out/ (raw captures)"
+  ],
+  "limitations_en": "Only the BOOLEAN encoding crashes the unpatched build; first run_poc.sh run had scripting defects in the regression helper/verdict counting, fixed and re-run.",
+  "limitations_ja": "未修正ビルドのクラッシュは BOOLEAN 符号化のみ。run_poc.sh 初回は回帰用補助と判定カウントに不備があり、修正して再実行。"
+}

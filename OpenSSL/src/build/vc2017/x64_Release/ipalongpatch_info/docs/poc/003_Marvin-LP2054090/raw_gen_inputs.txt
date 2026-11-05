@@ -1,0 +1,43 @@
+﻿+ generating RSA-2048 key (rsa2048.pem / rsa2048_pub.pem) and a second, unrelated key (wrong.pem)
++ ct_good.bin  : PKCS#1 v1.5 encryption of 'Hello Marvin' (random padding)
++ ct_good2.bin : second PKCS#1 v1.5 encryption of the same message (different random padding)
++ crafting raw blocks with broken padding (python3 -I make_blocks.py)
+wrote ct_bad_flip.bin        256 bytes  first bytes: d3490f2927211758b812d1f2
+wrote blk_bad_type1.bin      256 bytes  first bytes: 0001ffffffffffffffffffff
+wrote blk_bad_nosep.bin      256 bytes  first bytes: 000255555555555555555555
+wrote blk_bad_shortpad.bin   256 bytes  first bytes: 0002aaaaaa0048656c6c6f20
+wrote blk_bad_first.bin      256 bytes  first bytes: 0102bbbbbbbbbbbbbbbbbbbb
+wrote blk_good_manual.bin    256 bytes  first bytes: 00021112131415161718191a
++ ct_bad_type1.bin : raw-RSA encryption of blk_bad_type1.bin
++ ct_bad_nosep.bin : raw-RSA encryption of blk_bad_nosep.bin
++ ct_bad_shortpad.bin : raw-RSA encryption of blk_bad_shortpad.bin
++ ct_bad_first.bin : raw-RSA encryption of blk_bad_first.bin
++ ct_good_manual.bin : raw-RSA encryption of blk_good_manual.bin
+total 76
+drwxr-xr-x 2 root root 4096 Nov  2 03:03 .
+drwxr-xr-x 3 root root 4096 Nov  2 03:03 ..
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_bad_first.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_bad_nosep.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_bad_shortpad.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_bad_type1.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_good_manual.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_first.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_flip.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_nosep.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_shortpad.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_type1.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_good.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_good2.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_good_manual.bin
+-rw-r--r-- 1 root root   12 Nov  2 03:03 msg.txt
+-rw------- 1 root root 1704 Nov  2 03:03 rsa2048.pem
+-rw-r--r-- 1 root root  451 Nov  2 03:03 rsa2048_pub.pem
+-rw------- 1 root root 1704 Nov  2 03:03 wrong.pem
+e90d4d17384ce3bc0715a6d55941498577731bab331c8913fc261e807a087823  ct_bad_first.bin
+7246f45b81ed7fea1e1f3a3f4c35e38afe53f1785e7296006c63790d152c99e9  ct_bad_flip.bin
+14e82921badadcd2b383087d3e5b52d259e093cb43012d79128a4d98f9faef33  ct_bad_nosep.bin
+f4ff459079805cf00119d6aa0454f3ab449d43bb709bbb8ca5ecad8abe4be5cf  ct_bad_shortpad.bin
+428176539b539364fc51c253c938b04469d5e0060774bb2cedf82bbbf19e3590  ct_bad_type1.bin
+3b1061fe2d1e822a3648231cdfb015ef741976423d914b07386834baa7cb2f65  ct_good.bin
+9f54a041eaf1d858120919f536f2238c93d4f0675db7a756518d78eae25fc27a  ct_good2.bin
+8b38c7dce59b58a1eaca6edd45b611b8d9b7bbb0b9054b4a5e7b6f5e40bb9eb7  ct_good_manual.bin

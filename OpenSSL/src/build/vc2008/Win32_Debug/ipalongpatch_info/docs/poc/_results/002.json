@@ -1,0 +1,39 @@
+{
+  "nnn": "002",
+  "cve": "CVE-2024-0727",
+  "cveinfo": "PKCS12-NULL-ContentInfo-crash",
+  "log_file": "20261102_120658_002of033_CVE-2024-0727_PKCS12-NULL-ContentInfo-crash.log",
+  "start_jst": "2026/11/02 12:06:58 (JST)",
+  "end_jst": "2026/11/02 12:13:24 (JST)",
+  "duration": "00:06:26",
+  "verdict": "PASS",
+  "before_en": "Unpatched 1.1.1w crashes with SIGSEGV (NULL pointer dereference at address 0x8) on PKCS#12 files whose authSafes / inner pkcs7-data / inner pkcs7-encryptedData ContentInfo has no content: gdb shows ASN1_item_unpack(oct=0x0) from PKCS12_unpack_authsafes / PKCS12_unpack_p7data, PKCS12_unpack_p7encdata reading p7->d.encrypted->enc_data, pkcs12_gen_mac reading p12->authsafes->d.data->length, and newpass_p12 via PKCS12_newpass; ASan reports SEGV in 12/12 runs.",
+  "before_ja": "未修正 1.1.1w は authSafes / 内側 pkcs7-data / 内側 pkcs7-encryptedData の ContentInfo に content が無い PKCS#12 で SIGSEGV (アドレス 0x8 の NULL 参照) でクラッシュ。gdb で PKCS12_unpack_authsafes / PKCS12_unpack_p7data からの ASN1_item_unpack(oct=0x0)、p7->d.encrypted->enc_data を読む PKCS12_unpack_p7encdata、p12->authsafes->d.data->length を読む pkcs12_gen_mac、PKCS12_newpass 経由の newpass_p12 を確認。ASan は 12/12 回 SEGV を報告。",
+  "after_en": "Patched build returns PKCS12 'decode error' / 'mac verify failure' / 'parse error' (exit 1) for all variants via CLI and API; no crash, no ASan report (27/27 runs).",
+  "after_ja": "修正版は全不正ファイルに対し CLI・API とも PKCS12 の 'decode error' / 'mac verify failure' / 'parse error' (exit 1) を返し、クラッシュも ASan 報告も無し (27/27 回)。",
+  "method_en": "Regular PKCS#12 made with openssl pkcs12 -export; Python DER re-encoder removes the [0] content of the outer or inner ContentInfo (and recomputes the PKCS#12 MAC); tested with openssl pkcs12 and a C program calling PKCS12_parse/PKCS12_newpass/PKCS12_unpack_* on BASE, BASE-ASAN, PATCHED, PATCHED-ASAN; gdb backtraces; valgrind.",
+  "method_ja": "openssl pkcs12 -export で正規 PKCS#12 を作成し、Python の DER 再エンコーダで外側/内側 ContentInfo の [0] content を削除 (PKCS#12 MAC も再計算)。openssl pkcs12 と PKCS12_parse/PKCS12_newpass/PKCS12_unpack_* を呼ぶ C プログラムで BASE、BASE-ASAN、PATCHED、PATCHED-ASAN に対して試験、gdb バックトレース、valgrind。",
+  "regression_en": "good.p12 import (-info), PKCS12_parse/PKCS12_newpass/PKCS12_unpack_*, export+re-import all succeed on the patched build; valgrind clean.",
+  "regression_ja": "修正版で good.p12 の取り込み (-info)、PKCS12_parse/PKCS12_newpass/PKCS12_unpack_*、エクスポート+再取り込みがすべて成功。valgrind もクリーン。",
+  "tools": [
+    "openssl pkcs12 (BASE/PATCHED builds)",
+    "python3 -I (make_bad.py: DER re-encoder + PKCS#12 MAC)",
+    "gcc",
+    "gdb",
+    "AddressSanitizer",
+    "valgrind"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/002_CVE-2024-0727/make_bad.py",
+    "/home/user/work/poc/002_CVE-2024-0727/poc_api.c",
+    "/home/user/work/poc/002_CVE-2024-0727/build.sh",
+    "/home/user/work/poc/002_CVE-2024-0727/run_poc.sh",
+    "/home/user/work/poc/002_CVE-2024-0727/good.p12",
+    "/home/user/work/poc/002_CVE-2024-0727/bad_a_authsafes_nocontent.p12",
+    "/home/user/work/poc/002_CVE-2024-0727/bad_b_inner_data_nocontent.p12",
+    "/home/user/work/poc/002_CVE-2024-0727/bad_c_inner_encdata_nocontent.p12",
+    "/home/user/work/poc/002_CVE-2024-0727/out/ (raw captures)"
+  ],
+  "limitations_en": "SMIME_write_PKCS7() hardening not exercised separately; variant (a) cannot have a valid MAC so its MAC path crashes in pkcs12_gen_mac(); patched error for variant (c) uses the PKCS12_unpack_p7data function code (as upstream).",
+  "limitations_ja": "SMIME_write_PKCS7() の堅牢化は個別に未検証。(a) は正しい MAC を持てないため MAC 経路は pkcs12_gen_mac() でクラッシュ。(c) の修正版エラーは上流同様 PKCS12_unpack_p7data の関数コードで報告される。"
+}

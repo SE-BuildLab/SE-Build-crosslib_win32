@@ -1,0 +1,419 @@
+﻿
+##### [BASE] openssl version
+OpenSSL 1.1.1w  11 Sep 2023
+
+##### [BASE] (a) CLI: pkeyutl -decrypt, valid ciphertext
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin -out work/out_good_BASE.bin
+  [exit=0]
+./run_poc.sh: line 25: xxd: command not found
+
+##### [BASE] (a) CLI: pkeyutl -decrypt, corrupted ciphertext (last byte flipped), run twice
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_BASE_1.bin
+Public Key operation error
+139734379830144:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+139734379830144:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_BASE_2.bin
+Public Key operation error
+140024238603136:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+140024238603136:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (a) CLI: pkeyutl -decrypt, ciphertext whose plaintext block has type 0x01 instead of 0x02
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin -out work/out_badtype1_BASE.bin
+Public Key operation error
+140568360303488:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+140568360303488:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (a) CLI: rsautl -decrypt, corrupted ciphertext
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl rsautl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_rsautl_BASE.bin
+RSA operation error
+140025412717440:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+140025412717440:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, corrupted ciphertext
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_noir_BASE.bin
+pkeyutl: Can't set parameter "rsa_pkcs1_implicit_rejection:0":
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, valid ciphertext (must still work)
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin -out work/out_good_noir_BASE.bin
+pkeyutl: Can't set parameter "rsa_pkcs1_implicit_rejection:0":
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (a)(b) C PoC: RSA_private_decrypt / EVP_PKEY_decrypt on all ciphertexts
++ ./poc_rsa_base /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good2.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good_manual.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_nosep.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_shortpad.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_first.bin
+Library: OpenSSL 1.1.1w  11 Sep 2023 (headers: OpenSSL 1.1.1w  11 Sep 2023, implicit-rejection ctrl in headers: no)
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good2.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good_manual.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_nosep.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_shortpad.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_first.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+  [exit=0]
+
+##### [BASE] (c) evp_test with the patched tree's test/recipes/30-test_evp_data/evppkey.txt (implicit rejection vectors from OpenSSL 3.2)
+  [evp_test exit=1]
+  RSA-2048-2 + RSA-3072 Decrypt vectors in file: 39
+  --- evp_test summary / failures (head) ---
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:377: Source of above error; unexpected error PKEY_CTRL_INVALID
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:384: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:390: Expected KEYOP_ERROR got PKEY_CTRL_INVALID
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:496: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:501: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:506: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:511: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:551: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:557: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:563: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:570: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:577: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:584: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:591: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 140094822229824:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:597: Source of above error; unexpected error KEYOP_ERROR
+    # 140094822229824:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # Completed 1499 tests with 33 errors and 0 skipped
+    not ok 1 - /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt
+not ok 1 - run_file_tests
+
+##### [BASE] (d) timing: RSA_private_decrypt valid vs invalid padding (5000 iterations each)
++ ./poc_rsa_base /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem --timing 5000 /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin
+Library: OpenSSL 1.1.1w  11 Sep 2023 (headers: OpenSSL 1.1.1w  11 Sep 2023, implicit-rejection ctrl in headers: no)
+Timing RSA_private_decrypt(RSA_PKCS1_PADDING), 5000 iterations each, interleaved
+  last return values: valid ciphertext -> 12, invalid ciphertext -> -1
+  valid-padding  n=5000 min=676069 q1=697350 median=712271 q3=776124 p90=1036497 mean=809355 (ns)
+  bad-padding    n=5000 min=676499 q1=697116 median=710424 q3=743829 p90=899170 mean=759227 (ns)
+  median difference (bad - valid) = -1847 ns  (-0.26 % of valid median)
+  [exit=0]
+
+##### [BASE] (e) regression: CMS encrypt/decrypt (RSA PKCS#1 v1.5 key transport), right key and wrong key
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl cms -encrypt -in work/cms_plain.txt -recip work/cms_cert.pem -aes128 -out work/cms_enc_BASE.pem -outform PEM
+Can't open work/cms_cert.pem for reading, No such file or directory
+139893411314560:error:02001002:system library:fopen:No such file or directory:crypto/bio/bss_file.c:69:fopen('work/cms_cert.pem','r')
+139893411314560:error:2006D080:BIO routines:BIO_new_file:no such file:crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=1]
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl cms -decrypt -in work/cms_enc_BASE.pem -inform PEM -recip work/cms_cert.pem -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -out work/cms_dec_BASE.txt
+Can't open work/cms_cert.pem for reading, No such file or directory
+140432019643264:error:02001002:system library:fopen:No such file or directory:crypto/bio/bss_file.c:69:fopen('work/cms_cert.pem','r')
+140432019643264:error:2006D080:BIO routines:BIO_new_file:no such file:crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=2]
+cmp: work/cms_dec_BASE.txt: No such file or directory
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl cms -decrypt -in work/cms_enc_BASE.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/cms_dec_wrong_BASE.txt
+Can't open work/cms_enc_BASE.pem for reading, No such file or directory
+139624032570240:error:02001002:system library:fopen:No such file or directory:crypto/bio/bss_file.c:69:fopen('work/cms_enc_BASE.pem','r')
+139624032570240:error:2006D080:BIO routines:BIO_new_file:no such file:crypto/bio/bss_file.c:76:
+  [exit=2]
+  (expected: error with wrong key in both builds; output size: none)
+
+##### [BASE] (e) regression: PKCS#7 (smime) encrypt/decrypt, right key and wrong key
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl smime -encrypt -in work/cms_plain.txt -aes128 -out work/p7_enc_BASE.pem -outform PEM work/cms_cert.pem
+Can't open work/cms_cert.pem for reading, No such file or directory
+139703224097664:error:02001002:system library:fopen:No such file or directory:crypto/bio/bss_file.c:69:fopen('work/cms_cert.pem','r')
+139703224097664:error:2006D080:BIO routines:BIO_new_file:no such file:crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=2]
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl smime -decrypt -in work/p7_enc_BASE.pem -inform PEM -recip work/cms_cert.pem -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -out work/p7_dec_BASE.txt
+Can't open work/cms_cert.pem for reading, No such file or directory
+140415427296128:error:02001002:system library:fopen:No such file or directory:crypto/bio/bss_file.c:69:fopen('work/cms_cert.pem','r')
+140415427296128:error:2006D080:BIO routines:BIO_new_file:no such file:crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=2]
+cmp: work/p7_dec_BASE.txt: No such file or directory
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl smime -decrypt -in work/p7_enc_BASE.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/p7_dec_wrong_BASE.txt
+Can't open work/p7_enc_BASE.pem for reading, No such file or directory
+140367160650624:error:02001002:system library:fopen:No such file or directory:crypto/bio/bss_file.c:69:fopen('work/p7_enc_BASE.pem','r')
+140367160650624:error:2006D080:BIO routines:BIO_new_file:no such file:crypto/bio/bss_file.c:76:
+  [exit=2]
+  (expected: error with wrong key in both builds; output size: none)
+
+##### [BASE] (e) regression: TLS 1.2 with RSA key exchange (AES128-SHA), s_server/s_client of the same build
+  [s_client exit=1]
+  TLS handshake with RSA key exchange: OK (cipher AES128-SHA negotiated)
+
+##### [PATCHED] openssl version
+OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+
+##### [PATCHED] (a) CLI: pkeyutl -decrypt, valid ciphertext
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin -out work/out_good_PATCHED.bin
+  [exit=0]
+./run_poc.sh: line 25: xxd: command not found
+
+##### [PATCHED] (a) CLI: pkeyutl -decrypt, corrupted ciphertext (last byte flipped), run twice
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_PATCHED_1.bin
+  [exit=0]
+  output: 229 bytes, sha256=5d4ec236cedc4b3d522e7fca4c386aae
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_PATCHED_2.bin
+  [exit=0]
+  output: 229 bytes, sha256=5d4ec236cedc4b3d522e7fca4c386aae
+
+##### [PATCHED] (a) CLI: pkeyutl -decrypt, ciphertext whose plaintext block has type 0x01 instead of 0x02
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin -out work/out_badtype1_PATCHED.bin
+  [exit=0]
+  output: 84 bytes, sha256=1d093d0d27f9c491395c24de86fcb3e7
+
+##### [PATCHED] (a) CLI: rsautl -decrypt, corrupted ciphertext
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl rsautl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_rsautl_PATCHED.bin
+  [exit=0]
+  output: 229 bytes, sha256=5d4ec236cedc4b3d522e7fca4c386aae
+
+##### [PATCHED] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, corrupted ciphertext
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_noir_PATCHED.bin
+Public Key operation error
+140163041540992:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_pk1.c:277:
+140163041540992:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_ossl.c:737:
+  [exit=1]
+  output: (empty / none)
+
+##### [PATCHED] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, valid ciphertext (must still work)
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin -out work/out_good_noir_PATCHED.bin
+  [exit=0]
+./run_poc.sh: line 42: xxd: command not found
+  output: (empty / none)
+
+##### [PATCHED] (a)(b) C PoC: RSA_private_decrypt / EVP_PKEY_decrypt on all ciphertexts
++ ./poc_rsa_patched /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good2.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good_manual.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_nosep.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_shortpad.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_first.bin
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023 (headers: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023, implicit-rejection ctrl in headers: yes)
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good2.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good_manual.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  EVP_PKEY_decrypt(default)                      -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  EVP_PKEY_decrypt(default)                      -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_nosep.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 51 data=e69d1b1576f55376296ae72a98df9cb50af109ae017e31c4... sha256(out)=6d5fbd518c0c70b1...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 51 data=e69d1b1576f55376296ae72a98df9cb50af109ae017e31c4... sha256(out)=6d5fbd518c0c70b1...
+  EVP_PKEY_decrypt(default)                      -> OK len= 51 data=e69d1b1576f55376296ae72a98df9cb50af109ae017e31c4... sha256(out)=6d5fbd518c0c70b1...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_shortpad.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 23 data=389b828c0a9cc946c6901f497f4fc3db05f730091a45b2 sha256(out)=8eb9ed1cd7455054...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 23 data=389b828c0a9cc946c6901f497f4fc3db05f730091a45b2 sha256(out)=8eb9ed1cd7455054...
+  EVP_PKEY_decrypt(default)                      -> OK len= 23 data=389b828c0a9cc946c6901f497f4fc3db05f730091a45b2 sha256(out)=8eb9ed1cd7455054...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_first.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len=217 data=e769688baf9d0472ed73c753767c89a813bffb813896c2ee... sha256(out)=fa7bad8616adf223...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len=217 data=e769688baf9d0472ed73c753767c89a813bffb813896c2ee... sha256(out)=fa7bad8616adf223...
+  EVP_PKEY_decrypt(default)                      -> OK len=217 data=e769688baf9d0472ed73c753767c89a813bffb813896c2ee... sha256(out)=fa7bad8616adf223...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  [exit=0]
+
+##### [PATCHED] (c) evp_test with the patched tree's test/recipes/30-test_evp_data/evppkey.txt (implicit rejection vectors from OpenSSL 3.2)
+  [evp_test exit=0]
+  RSA-2048-2 + RSA-3072 Decrypt vectors in file: 39
+  --- evp_test summary / failures (head) ---
+    # Completed 1499 tests with 0 errors and 0 skipped
+    # Completed 1499 tests with 0 errors and 0 skipped
+    ok 1 - /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt
+ok 1 - run_file_tests
+
+##### [PATCHED] (d) timing: RSA_private_decrypt valid vs invalid padding (5000 iterations each)
++ ./poc_rsa_patched /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem --timing 5000 /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023 (headers: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023, implicit-rejection ctrl in headers: yes)
+Timing RSA_private_decrypt(RSA_PKCS1_PADDING), 5000 iterations each, interleaved
+  last return values: valid ciphertext -> 12, invalid ciphertext -> 229
+  valid-padding  n=5000 min=674710 q1=694975 median=706173 q3=751905 p90=999795 mean=795429 (ns)
+  bad-padding    n=5000 min=676441 q1=696675 median=706072 q3=735376 p90=923004 mean=750946 (ns)
+  median difference (bad - valid) = -101 ns  (-0.01 % of valid median)
+  [exit=0]
+
+##### [PATCHED] (e) regression: CMS encrypt/decrypt (RSA PKCS#1 v1.5 key transport), right key and wrong key
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -encrypt -in work/cms_plain.txt -recip work/cms_cert.pem -aes128 -out work/cms_enc_PATCHED.pem -outform PEM
+Can't open work/cms_cert.pem for reading, No such file or directory
+140135483308928:error:02001002:system library:fopen:No such file or directory:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:69:fopen('work/cms_cert.pem','r')
+140135483308928:error:2006D080:BIO routines:BIO_new_file:no such file:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=1]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -decrypt -in work/cms_enc_PATCHED.pem -inform PEM -recip work/cms_cert.pem -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -out work/cms_dec_PATCHED.txt
+Can't open work/cms_cert.pem for reading, No such file or directory
+140496598416256:error:02001002:system library:fopen:No such file or directory:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:69:fopen('work/cms_cert.pem','r')
+140496598416256:error:2006D080:BIO routines:BIO_new_file:no such file:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=2]
+cmp: work/cms_dec_PATCHED.txt: No such file or directory
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -decrypt -in work/cms_enc_PATCHED.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/cms_dec_wrong_PATCHED.txt
+Can't open work/cms_enc_PATCHED.pem for reading, No such file or directory
+140435922733952:error:02001002:system library:fopen:No such file or directory:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:69:fopen('work/cms_enc_PATCHED.pem','r')
+140435922733952:error:2006D080:BIO routines:BIO_new_file:no such file:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:76:
+  [exit=2]
+  (expected: error with wrong key in both builds; output size: none)
+
+##### [PATCHED] (e) regression: PKCS#7 (smime) encrypt/decrypt, right key and wrong key
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl smime -encrypt -in work/cms_plain.txt -aes128 -out work/p7_enc_PATCHED.pem -outform PEM work/cms_cert.pem
+Can't open work/cms_cert.pem for reading, No such file or directory
+140328479767424:error:02001002:system library:fopen:No such file or directory:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:69:fopen('work/cms_cert.pem','r')
+140328479767424:error:2006D080:BIO routines:BIO_new_file:no such file:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=2]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl smime -decrypt -in work/p7_enc_PATCHED.pem -inform PEM -recip work/cms_cert.pem -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -out work/p7_dec_PATCHED.txt
+Can't open work/cms_cert.pem for reading, No such file or directory
+140288425409408:error:02001002:system library:fopen:No such file or directory:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:69:fopen('work/cms_cert.pem','r')
+140288425409408:error:2006D080:BIO routines:BIO_new_file:no such file:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:76:
+unable to load certificate
+  [exit=2]
+cmp: work/p7_dec_PATCHED.txt: No such file or directory
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl smime -decrypt -in work/p7_enc_PATCHED.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/p7_dec_wrong_PATCHED.txt
+Can't open work/p7_enc_PATCHED.pem for reading, No such file or directory
+140313969105792:error:02001002:system library:fopen:No such file or directory:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:69:fopen('work/p7_enc_PATCHED.pem','r')
+140313969105792:error:2006D080:BIO routines:BIO_new_file:no such file:../openssl-1.1.1w-ipalongpatch_20261102/crypto/bio/bss_file.c:76:
+  [exit=2]
+  (expected: error with wrong key in both builds; output size: none)
+
+##### [PATCHED] (e) regression: TLS 1.2 with RSA key exchange (AES128-SHA), s_server/s_client of the same build
+  [s_client exit=1]
+  TLS handshake with RSA key exchange: OK (cipher AES128-SHA negotiated)
+
+##### valgrind (PATCHED, implicit rejection code path: valid + 2 invalid ciphertexts)
+  [valgrind exit=0]  (9 = valgrind found errors)
+
+##### VERDICT
+  (see the per-build sections above; summary is produced by the caller from the raw output)

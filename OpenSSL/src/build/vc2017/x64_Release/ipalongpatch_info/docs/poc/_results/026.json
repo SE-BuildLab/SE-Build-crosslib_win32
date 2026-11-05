@@ -1,0 +1,39 @@
+{
+ "nnn": "026",
+ "cve": "HollowByte",
+ "cveinfo": "LP2161371-TLS-init-buf-mem-DoS",
+ "log_file": "20261102_123308_026of033_HollowByte_LP2161371-TLS-init-buf-mem-DoS.log",
+ "start_jst": "2026/11/02 12:33:08 (JST)",
+ "end_jst": "2026/11/02 13:10:57 (JST)",
+ "duration": "00:37:49",
+ "verdict": "PASS",
+ "before_en": "200 connections sending only a 9-byte record+handshake header claiming a 131072-byte ClientHello: heap +154,272 bytes per connection (+30.9 MB total, VmRSS 14.5->41.2 MB); gdb on s_server: BUF_MEM_grow_clean(len=131076) -> 174,772-byte allocation from read_state_machine()/grow_init_buf() before any body byte.",
+ "before_ja": "131072 バイトの ClientHello を申告する 9 バイトのレコード+ハンドシェイクヘッダだけを送る 200 接続: 接続あたりヒープ +154,272 バイト (合計 +30.9 MB、VmRSS 14.5→41.2 MB); s_server の gdb: 本体未着のまま read_state_machine()/grow_init_buf() から BUF_MEM_grow_clean(len=131076) → 174,772 バイト確保。",
+ "after_en": "Patched: 0 bytes of heap growth per connection for the same traffic (VmRSS/VmData unchanged); gdb: only BUF_MEM_grow_clean(len=16388) from tls_get_message_body(), satisfied by the existing 21848-byte buffer; ASan builds clean.",
+ "after_ja": "修正版: 同じトラフィックで接続あたりヒープ増加 0 バイト (VmRSS/VmData 不変); gdb: tls_get_message_body() からの BUF_MEM_grow_clean(len=16388) のみで既存の 21848 バイトバッファで賄われる; ASan ビルドもクリーン。",
+ "method_en": "Python client sends 9-byte 'HollowByte' headers on N idle TCP connections; C server measures mallinfo2/VmRSS/VmData before and after the header is processed; stock openssl s_server of each build run under gdb with a conditional breakpoint on BUF_MEM_grow_clean; s_client/s_server regression including a 25-certificate chain.",
+ "method_ja": "Python クライアントが N 本の放置 TCP 接続に 9 バイトの 'HollowByte' ヘッダを送信; C サーバがヘッダ処理前後の mallinfo2/VmRSS/VmData を計測; 各ビルドの標準 openssl s_server を BUF_MEM_grow_clean への条件付きブレークポイント付き gdb で実行; 25 証明書チェーンを含む s_client/s_server 回帰。",
+ "regression_en": "TLS 1.2/1.3 handshakes with HTTP 200 and 21,758/21,811-byte Certificate messages spanning several records are received correctly by the patched client from patched and unpatched servers (and by the unpatched client from the patched server).",
+ "regression_ja": "TLS 1.2/1.3 ハンドシェイクで HTTP 200 を取得し、複数レコードにまたがる 21,758/21,811 バイトの Certificate メッセージを修正版クライアントが修正版/未修正サーバから (未修正クライアントも修正版サーバから) 正しく受信。",
+ "tools": [
+  "python3 -I (TCP client)",
+  "gcc",
+  "mallinfo2/proc status",
+  "gdb",
+  "AddressSanitizer",
+  "openssl s_server/s_client -msg",
+  "bash"
+ ],
+ "poc_files": [
+  "/home/user/work/poc/026_HollowByte/hb_client.py",
+  "/home/user/work/poc/026_HollowByte/hb_server.c",
+  "/home/user/work/poc/026_HollowByte/gdb_bufgrow.cmd",
+  "/home/user/work/poc/026_HollowByte/run_poc.sh",
+  "/home/user/work/poc/026_HollowByte/regress.sh",
+  "/home/user/work/poc/026_HollowByte/make_deliverables.py",
+  "/home/user/work/poc/026_HollowByte/mkdeliv.py",
+  "/home/user/work/poc/026_HollowByte/out/"
+ ],
+ "limitations_en": "Per-connection effect is bounded (~170 KiB); no CVE assigned. The glibc fragmentation / RSS retention described by the reporter was not reproduced; the PoC quantifies the per-connection allocation precisely instead. DTLS is out of scope of the fix.",
+ "limitations_ja": "接続あたりの影響は有界 (約 170 KiB) で CVE は未割り当て。報告者が述べる glibc 断片化/RSS 高止まりは再現せず、PoC は接続あたりの確保量を正確に定量化した。DTLS は修正の対象外。"
+}

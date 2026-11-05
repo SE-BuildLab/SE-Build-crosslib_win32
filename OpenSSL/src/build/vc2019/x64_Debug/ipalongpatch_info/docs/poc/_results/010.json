@@ -1,0 +1,34 @@
+{
+  "nnn": "010",
+  "cve": "CVE-2025-68160",
+  "cveinfo": "BIO-f-linebuffer-heap-overflow",
+  "log_file": "20261102_121611_010of033_CVE-2025-68160_BIO-f-linebuffer-heap-overflow.log",
+  "start_jst": "2026/11/02 12:16:11",
+  "end_jst": "2026/11/02 12:41:49",
+  "duration": "00:25:38",
+  "verdict": "PASS",
+  "before_en": "BIO_write() of 40000 newline-free bytes through BIO_f_linebuffer() to a sink that accepts 1 byte per call: ASan heap-buffer-overflow WRITE of size 39999 in memcpy from linebuffer_write (bf_lbuf.c:198), 0 bytes after the 10240-byte obuf allocated by linebuffer_new; WRITE of size 30000 with a 10000-byte sink; gdb shows inl=39999, obuf_len=0, obuf_size=10240 at the memcpy; valgrind reports invalid writes past the 10,240-byte block; the plain build crashes with SIGSEGV in realloc during BIO_flush.",
+  "before_ja": "1 回 1 バイトしか受け付けないシンクへ BIO_f_linebuffer() 経由で改行無し 40000 バイトを BIO_write(): linebuffer_write (bf_lbuf.c:198) からの memcpy で ASan heap-buffer-overflow WRITE of size 39999、linebuffer_new が確保した 10240 バイトの obuf の直後; 10000 バイトシンクでは WRITE of size 30000; gdb は memcpy 時点で inl=39999、obuf_len=0、obuf_size=10240 を表示; valgrind は 10,240 バイトブロックを越える不正書き込みを報告; 素のビルドは BIO_flush 中の realloc で SIGSEGV。",
+  "after_en": "Same inputs on PATCHED(-ASAN): no memory error, BIO_write returns 40000, BIO_flush returns 1 and the sink receives exactly the 40000 input bytes (also for 40000/10000, 12000/4000, 100000/3); valgrind clean.",
+  "after_ja": "同じ入力を PATCHED(-ASAN) で実行: メモリエラー無し、BIO_write は 40000 を返し、BIO_flush は 1 を返し、シンクは入力の 40000 バイトを正確に受信 (40000/10000、12000/4000、100000/3 も同様); valgrind 問題なし。",
+  "method_en": "C program lbuf_poc.c with a custom short-writing sink BIO (BIO_meth_new, max N bytes per write, records data) under BIO_f_linebuffer(); single BIO_write of 40000 newline-free bytes + BIO_flush; built against BASE-ASAN/PATCHED-ASAN and BASE/PATCHED (gdb at bf_lbuf.c:198, valgrind); run_poc.sh with regression mode.",
+  "method_ja": "BIO_f_linebuffer() の下に short write する独自シンク BIO (BIO_meth_new、1 回最大 N バイト、データ記録) を置いた C プログラム lbuf_poc.c; 改行無し 40000 バイトの BIO_write 1 回 + BIO_flush; BASE-ASAN/PATCHED-ASAN と BASE/PATCHED (bf_lbuf.c:198 の gdb、valgrind) 向けにビルド; run_poc.sh に回帰モード。",
+  "regression_en": "Line-buffering semantics unchanged: complete lines passed immediately, partial tail held until BIO_flush, delivered bytes == input, identical BASE/PATCHED output for sink chunk sizes 1, 7, 1000000; valgrind clean; patched test/bio_memleak_test ok 1-7.",
+  "regression_ja": "行バッファリングの意味は不変: 完全な行は即時転送、末尾の未完行は BIO_flush まで保持、到達バイト列 == 入力、chunk 1、7、1000000 で BASE/PATCHED 出力同一; valgrind 問題なし; 修正済み test/bio_memleak_test ok 1〜7。",
+  "tools": [
+    "gcc",
+    "AddressSanitizer (BASE-ASAN / PATCHED-ASAN builds)",
+    "gdb",
+    "valgrind",
+    "test/bio_memleak_test (patched build)"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/010_CVE-2025-68160/lbuf_poc.c",
+    "/home/user/work/poc/010_CVE-2025-68160/run_poc.sh",
+    "/home/user/work/poc/010_CVE-2025-68160/out/run_poc_full.txt",
+    "/home/user/work/poc/010_CVE-2025-68160/out/run_poc_full_attempt1.txt",
+    "/home/user/work/poc/010_CVE-2025-68160/out/base_gdb_overflow.txt"
+  ],
+  "limitations_en": "BIO_f_linebuffer is only used by applications that push it explicitly; a custom short-writing sink models the trigger. Plain-build crash location depends on heap layout (ASan/valgrind deterministic). Buffer is 10240 bytes in 1.1.1w. First run_poc.sh run had two script-side check bugs; fixed and re-run, both kept.",
+  "limitations_ja": "BIO_f_linebuffer は明示的に push するアプリのみ使用; short write する独自シンクでトリガを模倣。素のビルドのクラッシュ位置はヒープ配置依存 (ASan/valgrind は決定的)。1.1.1w のバッファは 10240 バイト。run_poc.sh 初回はスクリプト側チェックの不具合 2 件; 修正・再実行し両方保持。"
+}

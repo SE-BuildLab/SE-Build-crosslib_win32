@@ -1,0 +1,35 @@
+{
+  "nnn": "007",
+  "cve": "CVE-2024-9143",
+  "cveinfo": "GF2m-poly2arr-OOB-memory-access",
+  "log_file": "20261102_121100_007of033_CVE-2024-9143_GF2m-poly2arr-OOB-memory-access.log",
+  "start_jst": "2026/11/02 12:11:00",
+  "end_jst": "2026/11/02 12:35:36",
+  "duration": "00:24:36",
+  "verdict": "PASS",
+  "before_en": "BASE accepts the even pentanomial 0xf2, the hexanomial 0xf3 and a degree-662 polynomial in EC_GROUP_new_curve_GF2m(). With the even pentanomial x^163+x^7+x^6+x^3+x ASan reports heap-buffer-overflow READ in BN_GF2m_mod_arr (bn_gf2m.c:336) inside EC_GROUP_new_curve_GF2m(), SEGV in BN_GF2m_mod_arr via EC_POINT_set_compressed_coordinates_GF2m()/BN_GF2m_mod_mul(); with a hexanomial BN_GF2m_poly2arr() returns 6 (unterminated array) and BN_GF2m_mod_inv_arr() triggers stack-buffer-overflow in BN_GF2m_arr2poly. gdb: the exponent loop reads past -1 (p[0]@8 = {163,7,6,3,1,-1,1431684288,21845}), n = -22370064, write target 179 MB beyond the 7-word buffer -> SIGSEGV.",
+  "before_ja": "BASE は EC_GROUP_new_curve_GF2m() で偶数五項式 0xf2、六項式 0xf3、次数 662 の多項式を受理する。偶数五項式 x^163+x^7+x^6+x^3+x では ASan が EC_GROUP_new_curve_GF2m() 内の BN_GF2m_mod_arr (bn_gf2m.c:336) で heap-buffer-overflow READ、EC_POINT_set_compressed_coordinates_GF2m()/BN_GF2m_mod_mul() 経由で BN_GF2m_mod_arr の SEGV を報告; 六項式では BN_GF2m_poly2arr() が 6 (終端なし配列) を返し BN_GF2m_mod_inv_arr() が BN_GF2m_arr2poly で stack-buffer-overflow。gdb: 指数ループが -1 を通過 (p[0]@8 = {163,7,6,3,1,-1,1431684288,21845})、n = -22370064、書き込み先は 7 ワードバッファの 179 MB 先 → SIGSEGV。",
+  "after_en": "EC_GROUP_new_curve_GF2m() returns NULL with EC_R_UNSUPPORTED_FIELD for all invalid polynomials, BN_GF2m_mod_mul() fails with BN_R_INVALID_LENGTH, BN_GF2m_poly2arr() returns 7 for the hexanomial so the caller rejects it; no ASan report; the benign sect163k1 polynomial still works.",
+  "after_ja": "すべての不正多項式で EC_GROUP_new_curve_GF2m() は EC_R_UNSUPPORTED_FIELD で NULL を返し、BN_GF2m_mod_mul() は BN_R_INVALID_LENGTH で失敗、六項式では BN_GF2m_poly2arr() が 7 を返して呼び出し側が拒否; ASan 報告なし; 正常な sect163k1 多項式は引き続き動作。",
+  "method_en": "C program gf2m_poc.c driving EC_GROUP_new_curve_GF2m / EC_POINT_mul / BN_GF2m_mod_mul / BN_GF2m_poly2arr+BN_GF2m_mod_inv_arr with invalid polynomials (even, hexanomial, excessive degree, degree-163 variants) and the benign sect163k1 polynomial; built against BASE-ASAN, PATCHED-ASAN (ASan reports) and BASE/PATCHED (gdb); run_poc.sh with regression checks.",
+  "method_ja": "C プログラム gf2m_poc.c で不正多項式 (偶数、六項式、過大次数、次数 163 の変種) と正常な sect163k1 多項式により EC_GROUP_new_curve_GF2m / EC_POINT_mul / BN_GF2m_mod_mul / BN_GF2m_poly2arr+BN_GF2m_mod_inv_arr を実行; BASE-ASAN、PATCHED-ASAN (ASan 報告) と BASE/PATCHED (gdb) 向けにビルド; run_poc.sh で回帰確認も実施。",
+  "regression_en": "valid163 identical on BASE/PATCHED; patched openssl: sect163k1/sect233r1/sect283k1/sect571r1 genkey, ec -check, ECDSA sign/verify OK; explicit-parameter sect233r1/sect571r1 ecparam -check ok and sign/verify OK; patched ec_internal_test (incl. ec2m_field_sanity) and ectest pass; valgrind clean.",
+  "regression_ja": "valid163 は BASE/PATCHED で同一; 修正済み openssl で sect163k1/sect233r1/sect283k1/sect571r1 の genkey、ec -check、ECDSA 署名検証 OK; 明示パラメータの sect233r1/sect571r1 の ecparam -check ok と署名検証 OK; 修正済み ec_internal_test (ec2m_field_sanity 含む) と ectest 合格; valgrind 問題なし。",
+  "tools": [
+    "gcc",
+    "AddressSanitizer (BASE-ASAN / PATCHED-ASAN builds)",
+    "gdb",
+    "valgrind",
+    "openssl ecparam/ec/dgst (patched build)",
+    "test/ec_internal_test, test/ectest (patched build)"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/007_CVE-2024-9143/gf2m_poc.c",
+    "/home/user/work/poc/007_CVE-2024-9143/run_poc.sh",
+    "/home/user/work/poc/007_CVE-2024-9143/out/run_poc_full.txt",
+    "/home/user/work/poc/007_CVE-2024-9143/out/run_poc_full_attempt1.txt",
+    "/home/user/work/poc/007_CVE-2024-9143/out/base_gdb_even163_curve.txt"
+  ],
+  "limitations_en": "Inputs are not reachable via X.509/TLS (per advisory); low-level API used directly. Wild address depends on heap layout but was always detected by ASan or crashed with SIGSEGV. Hexanomial over-read shown via public BN_GF2m_mod_inv_arr(); inside EC it only causes erroneous acceptance. First run_poc.sh run had a script error in one regression step; fixed and re-run.",
+  "limitations_ja": "入力は X.509/TLS からは到達不能 (アドバイザリ); 低レベル API を直接使用。異常アドレスはヒープ配置依存だが常に ASan 検出または SIGSEGV。六項式の読み過ぎは公開 BN_GF2m_mod_inv_arr() で示した (EC 内部では誤受理のみ)。run_poc.sh 初回は回帰 1 手順にスクリプト誤り; 修正して再実行。"
+}

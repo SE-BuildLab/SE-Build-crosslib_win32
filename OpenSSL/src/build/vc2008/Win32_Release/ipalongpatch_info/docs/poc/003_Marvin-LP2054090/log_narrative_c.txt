@@ -1,0 +1,109 @@
+﻿=== c. Vulnerability and PoC strategy / 脆弱性の概要と PoC の方針 ===
+
+[EN] Vulnerability (Marvin attack, Ubuntu LP: #2054090, no CVE assigned to OpenSSL itself).
+OpenSSL 1.1.1w decrypts RSA PKCS#1 v1.5 (RSAES-PKCS1-v1_5) ciphertexts with an explicit
+padding check: RSA_private_decrypt() / EVP_PKEY_decrypt() with RSA_PKCS1_PADDING (the default
+of `openssl pkeyutl -decrypt` and `openssl rsautl -decrypt`) call
+RSA_padding_check_PKCS1_type_2() in crypto/rsa/rsa_pk1.c, and when the decrypted block does not
+start with 0x00 0x02, contains fewer than 8 non-zero padding bytes or has no 0x00 separator, the
+API returns -1, queues RSA_R_PKCS_DECODING_ERROR / RSA_R_PADDING_CHECK_FAILED and produces no
+output. Whether the padding check succeeded is therefore visible to the caller (and through the
+application usually to a remote peer) as a return value, an output length and a different code
+path. This is the oracle used by Bleichenbacher-type chosen-ciphertext attacks. The "Marvin
+Attack" (Hubert Kario, Red Hat, September 2023) showed that such oracles stay exploitable through
+timing even after the constant-time hardening of CVE-2022-4304 and that the robust API-level
+countermeasure is "implicit rejection": when the padding is invalid, return a deterministic
+pseudo-random message derived from the private key and the ciphertext instead of an error, so an
+invalid ciphertext cannot be told apart from a valid ciphertext that happens to contain that
+message. OpenSSL 3.2.0 introduced implicit rejection (PR #13817); upstream 1.1.1 never received it
+("would require a breaking change of RSA decryption behavior"), Ubuntu back-ported the Red Hat
+patch in openssl 1.1.1f-1ubuntu2.22 (USN-6663-1), and IPALongPatch 003 ports that back-port to
+1.1.1w: crypto/rsa/rsa_ossl.c derives a key-derivation key kdk = HMAC-SHA256(key = SHA256(d padded
+to the modulus size), data = ciphertext padded to the modulus size) unconditionally for
+RSA_PKCS1_PADDING and calls the new constant-time ossl_rsa_padding_check_PKCS1_type_2()
+(crypto/rsa/rsa_pk1.c, with ossl_rsa_prf()), which selects either the real message or a synthetic
+message of pseudo-random length with constant-time masks; crypto/rsa/rsa_pmeth.c adds the
+EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION ctrl and the "rsa_pkcs1_implicit_rejection" string ctrl;
+include/openssl/rsa.h adds RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING (8) for the classic behaviour;
+crypto/cms/cms_env.c and crypto/pkcs7/pk7_doit.c disable implicit rejection for CMS/PKCS#7 key
+transport because those layers rely on the decryption error to detect a non-matching key;
+test/recipes/30-test_evp_data/evppkey.txt receives the OpenSSL 3.2 test vectors.
+
+[JA] 脆弱性 (Marvin 攻撃、Ubuntu LP: #2054090、OpenSSL 自体には CVE 未割当)。
+OpenSSL 1.1.1w は RSA PKCS#1 v1.5 (RSAES-PKCS1-v1_5) 暗号文を「明示的な」パディング検査付きで復号する。
+RSA_PKCS1_PADDING を指定した RSA_private_decrypt() / EVP_PKEY_decrypt() (`openssl pkeyutl -decrypt` や
+`openssl rsautl -decrypt` の既定) は crypto/rsa/rsa_pk1.c の RSA_padding_check_PKCS1_type_2() を呼び、
+復号ブロックが 0x00 0x02 で始まらない、非ゼロのパディングが 8 バイト未満、0x00 区切りが無い、のいずれかなら
+API は -1 を返し、RSA_R_PKCS_DECODING_ERROR / RSA_R_PADDING_CHECK_FAILED をエラーキューに入れ、出力を生成
+しない。したがって「パディング検査が成功したか」が戻り値・出力長・異なるコードパスとして呼び出し側 (アプリ
+ケーションを介して多くの場合リモートの相手) に見える。これが Bleichenbacher 型選択暗号文攻撃のオラクルで
+ある。「Marvin 攻撃」(Hubert Kario, Red Hat, 2023 年 9 月) は、CVE-2022-4304 の定数時間化の後もこの種の
+オラクルがタイミング経由で悪用可能なこと、API レベルの堅牢な対策は「implicit rejection (暗黙の拒否)」—
+パディング不正時にエラーではなく秘密鍵と暗号文から決定的に導出した疑似乱数メッセージを返し、不正な暗号文
+と「偶然そのメッセージを含む正当な暗号文」を区別不能にする—であることを示した。OpenSSL 3.2.0 がこれを導入
+(PR #13817) したが、上流 1.1.1 には取り込まれず (「RSA 復号動作の互換性を壊す変更が必要」)、Ubuntu が Red
+Hat のパッチを openssl 1.1.1f-1ubuntu2.22 (USN-6663-1) にバックポートし、IPALongPatch 003 はそれを 1.1.1w に
+移植した: crypto/rsa/rsa_ossl.c は RSA_PKCS1_PADDING の場合に常に (パディングの正否と無関係に) 鍵導出鍵
+kdk = HMAC-SHA256(key = モジュラス長にパディングした d の SHA256, data = モジュラス長にパディングした暗号文)
+を導出し、新設の定数時間関数 ossl_rsa_padding_check_PKCS1_type_2() (crypto/rsa/rsa_pk1.c、ossl_rsa_prf()
+を使用) が定数時間マスクで本物のメッセージか疑似乱数長の合成メッセージかを選択する。crypto/rsa/rsa_pmeth.c
+には EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION ctrl と文字列 ctrl "rsa_pkcs1_implicit_rejection" が追加され、
+include/openssl/rsa.h には従来動作用の RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING (8) が追加された。
+crypto/cms/cms_env.c と crypto/pkcs7/pk7_doit.c は、鍵不一致の検出に復号エラーを利用しているため CMS/PKCS#7
+の鍵転送では implicit rejection を無効化する。test/recipes/30-test_evp_data/evppkey.txt には OpenSSL 3.2 の
+テストベクタが追加された。
+
+[EN] PoC strategy. (a) Generate an RSA-2048 key, a valid PKCS#1 v1.5 ciphertext of "Hello Marvin"
+(two of them, with different random padding) and ciphertexts whose decrypted block has broken
+padding: a valid ciphertext with its last byte flipped (decrypts to a random block), and raw
+(no-padding) RSA encryptions of crafted 256-byte blocks with block type 0x01 instead of 0x02,
+with no 0x00 separator, with only 3 padding bytes, and with a non-zero first byte; also a
+hand-made correctly padded block as a control. Decrypt all of them with the CLI (pkeyutl, rsautl)
+and with a C program (RSA_private_decrypt(), EVP_PKEY_decrypt()) built against each build. The
+unpatched build must report an error for the broken ones (the oracle); the patched build must
+return a deterministic synthetic message (identical bytes when the same ciphertext is decrypted
+again, different bytes/lengths for different ciphertexts) and the correct plaintext for the valid
+ciphertexts. (b) Check that the patched build restores the explicit error when implicit rejection
+is disabled (`-pkeyopt rsa_pkcs1_implicit_rejection:0`, EVP_PKEY_CTX_ctrl(...,
+EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0, NULL), RSA_private_decrypt(...,
+RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING)) and that the unpatched build does not know these controls.
+(c) Interoperability: run the build's test/evp_test on the patched tree's
+test/recipes/30-test_evp_data/evppkey.txt, which contains the OpenSSL 3.2 implicit-rejection
+vectors (keys RSA-2048-2 and RSA-3072 with the expected synthetic outputs); the vector lines were
+compared with the Ubuntu patch (all 156 Decrypt/Input/Output/Ctrl/key lines identical). The
+patched build must pass them, the unpatched one must fail them. (d) Timing: measure
+RSA_private_decrypt() for the valid and for the corrupted ciphertext (5000 interleaved iterations
+each, clock_gettime(CLOCK_MONOTONIC), min/quartiles/median/mean) on both builds. (e) Regression:
+CMS and PKCS#7 (smime) RSA key-transport encrypt/decrypt with the right key and with a wrong key
+(also with `cms -decrypt -debug_decrypt`, which reports the key-transport failure itself), and a
+TLS 1.2 handshake with RSA key exchange (`-cipher AES128-SHA`) between s_server and s_client of
+the same build; valgrind --leak-check=full on the patched decryption path.
+
+[JA] PoC の方針。(a) RSA-2048 鍵、"Hello Marvin" の正当な PKCS#1 v1.5 暗号文 (ランダムパディングの異なる 2 個)、
+および復号ブロックのパディングが壊れている暗号文を作る: 正当な暗号文の末尾 1 バイトを反転したもの (復号結果が
+乱数ブロックになる)、細工した 256 バイトブロックを生 (パディング無し) RSA で暗号化したもの (ブロック種別
+0x01、0x00 区切り無し、パディング 3 バイトのみ、先頭バイトが非ゼロ)、対照として手作りの正しいパディング
+ブロック。これらすべてを各ビルドの CLI (pkeyutl, rsautl) と、各ビルドに対してビルドした C プログラム
+(RSA_private_decrypt(), EVP_PKEY_decrypt()) で復号する。未パッチ版は壊れた暗号文に対してエラーを報告する
+(オラクル) はずで、パッチ版は決定的な合成メッセージ (同じ暗号文を再度復号すると同一バイト列、異なる暗号文
+では異なるバイト列・長さ) を返し、正当な暗号文には正しい平文を返すはずである。(b) パッチ版で implicit
+rejection を無効化 (`-pkeyopt rsa_pkcs1_implicit_rejection:0`、EVP_PKEY_CTX_ctrl(...,
+EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0, NULL)、RSA_private_decrypt(..., RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING))
+すると従来の明示的エラーに戻ること、未パッチ版はこれらの制御を知らないことを確認する。(c) 相互運用性: 各
+ビルドの test/evp_test を、OpenSSL 3.2 の implicit rejection テストベクタ (RSA-2048-2 と RSA-3072 鍵、期待さ
+れる合成出力付き) を含むパッチ版ツリーの test/recipes/30-test_evp_data/evppkey.txt に対して実行する。ベクタ行
+は Ubuntu パッチと比較済み (Decrypt/Input/Output/Ctrl/鍵の 156 行すべて一致)。パッチ版は合格、未パッチ版は
+不合格になるはずである。(d) タイミング: 正当な暗号文と改変暗号文の RSA_private_decrypt() 時間を両ビルドで計測
+する (各 5000 回を交互に、clock_gettime(CLOCK_MONOTONIC)、最小値/四分位/中央値/平均)。(e) 回帰: CMS と
+PKCS#7 (smime) の RSA 鍵転送による暗号化/復号を正しい鍵と誤った鍵で (鍵転送の失敗自体を報告する
+`cms -decrypt -debug_decrypt` も含めて) 確認し、同一ビルドの s_server/s_client 間で RSA 鍵交換の TLS 1.2
+ハンドシェイク (`-cipher AES128-SHA`) を確認する。パッチ版の復号経路には valgrind --leak-check=full を掛ける。
+
+[EN] Note on evidence type: this item is a logic / API-level oracle, not a memory-safety defect, so
+no crash, ASan report or gdb backtrace is expected. The "unpatched evidence" is the error return
+for invalid padding (and the failing OpenSSL 3.2 test vectors); the "patched evidence" is the
+deterministic synthetic output and the passing vectors.
+
+[JA] 証拠の種類に関する注記: 本項目はロジック / API レベルのオラクルであり、メモリ安全性の欠陥ではないため、
+クラッシュ・ASan レポート・gdb バックトレースは発生しない。「未パッチ版の証拠」はパディング不正時のエラー
+戻り (および OpenSSL 3.2 テストベクタの不合格)、「パッチ版の証拠」は決定的な合成出力とベクタの合格である。

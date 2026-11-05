@@ -1,0 +1,29 @@
+{
+  "nnn": "033",
+  "cve": "TAGGING",
+  "cveinfo": "Append-Tag-String-ipalongpatch_20261102",
+  "log_file": "20261102_120949_033of033_TAGGING_Append-Tag-String-ipalongpatch_20261102.log",
+  "start_jst": "2026/11/02 12:09:49",
+  "end_jst": "2026/11/02 12:09:51",
+  "duration": "00:00:02",
+  "verdict": "PASS",
+  "before_en": "OPENSSL_VERSION_TEXT = \"OpenSSL 1.1.1w  11 Sep 2023\"",
+  "before_ja": "OPENSSL_VERSION_TEXT は \"OpenSSL 1.1.1w  11 Sep 2023\"",
+  "after_en": "OPENSSL_VERSION_TEXT = \"OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023\"; OPENSSL_VERSION_NUMBER unchanged (0x1010117fL)",
+  "after_ja": "OPENSSL_VERSION_TEXT が \"OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023\" になり、OPENSSL_VERSION_NUMBER は不変 (0x1010117fL)",
+  "method_en": "vercheck.c against base and patched builds; openssl version on Linux (base/patched) and Windows x64 under wine",
+  "method_ja": "vercheck.c を未パッチ/パッチ済みビルドで実行; Linux (未パッチ/パッチ済み) と wine 上の Windows x64 版で openssl version を実行",
+  "regression_en": "make test on the tagged tree: 2658 tests PASS",
+  "regression_ja": "タグ付与後ツリーで make test 2658 テスト合格",
+  "tools": [
+    "gcc",
+    "openssl version (Linux base/patched builds)",
+    "wine 9.0 (mingw64 build of the patched tree)",
+    "make test (full suite on the tagged tree)"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/033_TAGGING/vercheck.c"
+  ],
+  "limitations_en": "none",
+  "limitations_ja": "なし"
+}

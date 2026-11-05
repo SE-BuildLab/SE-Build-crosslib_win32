@@ -1,0 +1,86 @@
+﻿+ gcc -g -O0 -Wall  -I/home/user/work/base/openssl-1.1.1w/include -I/home/user/work/base/openssl-1.1.1w/include hb_server.c -L/home/user/work/base/openssl-1.1.1w -lssl -lcrypto -Wl,-rpath,/home/user/work/base/openssl-1.1.1w -o hb_server_base
++ gcc -g -O0 -Wall -fsanitize=address -I/home/user/work/base_asan/include -I/home/user/work/src_1.1.1w/openssl-1.1.1w/include hb_server.c -L/home/user/work/base_asan -lssl -lcrypto -Wl,-rpath,/home/user/work/base_asan -o hb_server_baseasan
++ gcc -g -O0 -Wall  -I/home/user/work/patched/build/include -I/home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/include hb_server.c -L/home/user/work/patched/build -lssl -lcrypto -Wl,-rpath,/home/user/work/patched/build -o hb_server_patched
++ gcc -g -O0 -Wall -fsanitize=address -I/home/user/work/patched/build-asan/include -I/home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/include hb_server.c -L/home/user/work/patched/build-asan -lssl -lcrypto -Wl,-rpath,/home/user/work/patched/build-asan -o hb_server_patchasan
+=== [base] measurement server on 127.0.0.1:14026, 200 connections, claimed ClientHello length 131072 ===
++ ./hb_server_base 14026 200 /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/servercert.pem /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/serverkey.pem &  ;  python3 -I hb_client.py 127.0.0.1 14026 200 131072 4 2
+[server] OpenSSL 1.1.1w  11 Sep 2023 listening on 127.0.0.1:14026, expecting 200 connections
+P0 before accepting:                                         heap_in_use=    169072 bytes  VmRSS=   5136 kB  VmData=    400 kB
+P1 all connections accepted, SSL_accept() called, no data yet: heap_in_use=  14654672 bytes  VmRSS=  14260 kB  VmData=  14536 kB
+   per-connection fixed cost: 72428 bytes
+P2 every connection delivered its 9 byte header, SSL_accept() -> WANT_READ: heap_in_use=  45509072 bytes  VmRSS=  40936 kB  VmData=  48936 kB
+   200 connections are now waiting for a ClientHello message body that never comes
+   heap growth caused by the 9 byte headers: 30854400 bytes total = 154272 bytes per connection
+RESULT: per-connection growth after the header = 154272 bytes (VULNERABLE: init_buf pre-allocated to the claimed size)
+=== [patched] measurement server on 127.0.0.1:14026, 200 connections, claimed ClientHello length 131072 ===
++ ./hb_server_patched 14026 200 /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/servercert.pem /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/serverkey.pem &  ;  python3 -I hb_client.py 127.0.0.1 14026 200 131072 4 2
+[server] OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023 listening on 127.0.0.1:14026, expecting 200 connections
+P0 before accepting:                                         heap_in_use=    169200 bytes  VmRSS=   5188 kB  VmData=    400 kB
+P1 all connections accepted, SSL_accept() called, no data yet: heap_in_use=  14654800 bytes  VmRSS=  14232 kB  VmData=  14536 kB
+   per-connection fixed cost: 72428 bytes
+P2 every connection delivered its 9 byte header, SSL_accept() -> WANT_READ: heap_in_use=  14654800 bytes  VmRSS=  14240 kB  VmData=  14536 kB
+   200 connections are now waiting for a ClientHello message body that never comes
+   heap growth caused by the 9 byte headers: 0 bytes total = 0 bytes per connection
+RESULT: per-connection growth after the header = 0 bytes (OK: buffer grows only with received data)
+(ASan builds: mallinfo2 is not meaningful under ASan's allocator; VmRSS/VmData only, and no ASan error expected)
+=== [baseasan] measurement server on 127.0.0.1:14026, 100 connections, claimed ClientHello length 131072 ===
++ ./hb_server_baseasan 14026 100 /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/servercert.pem /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/serverkey.pem &  ;  python3 -I hb_client.py 127.0.0.1 14026 100 131072 4 2
+[server] OpenSSL 1.1.1w  11 Sep 2023 listening on 127.0.0.1:14026, expecting 100 connections
+P0 before accepting:                                         heap_in_use=         0 bytes  VmRSS=  19056 kB  VmData=15032425180 kB
+P1 all connections accepted, SSL_accept() called, no data yet: heap_in_use=         0 bytes  VmRSS=  26352 kB  VmData=15032433628 kB
+   per-connection fixed cost: 0 bytes
+P2 every connection delivered its 9 byte header, SSL_accept() -> WANT_READ: heap_in_use=         0 bytes  VmRSS=  43128 kB  VmData=15032451756 kB
+   100 connections are now waiting for a ClientHello message body that never comes
+   heap growth caused by the 9 byte headers: 0 bytes total = 0 bytes per connection
+RESULT: per-connection growth after the header = 0 bytes (OK: buffer grows only with received data)
+=== [patchasan] measurement server on 127.0.0.1:14026, 100 connections, claimed ClientHello length 131072 ===
++ ./hb_server_patchasan 14026 100 /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/servercert.pem /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/serverkey.pem &  ;  python3 -I hb_client.py 127.0.0.1 14026 100 131072 4 2
+[server] OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023 listening on 127.0.0.1:14026, expecting 100 connections
+P0 before accepting:                                         heap_in_use=         0 bytes  VmRSS=  19236 kB  VmData=15032425180 kB
+P1 all connections accepted, SSL_accept() called, no data yet: heap_in_use=         0 bytes  VmRSS=  26548 kB  VmData=15032433628 kB
+   per-connection fixed cost: 0 bytes
+P2 every connection delivered its 9 byte header, SSL_accept() -> WANT_READ: heap_in_use=         0 bytes  VmRSS=  27020 kB  VmData=15032433628 kB
+   100 connections are now waiting for a ClientHello message body that never comes
+   heap growth caused by the 9 byte headers: 0 bytes total = 0 bytes per connection
+RESULT: per-connection growth after the header = 0 bytes (OK: buffer grows only with received data)
+=== [base] gdb on 'openssl s_server': break BUF_MEM_grow_clean, one HollowByte connection ===
++ sleep 40 | LD_LIBRARY_PATH=/home/user/work/base/openssl-1.1.1w timeout 30 gdb -batch -x gdb_bufgrow.cmd --args /home/user/work/base/openssl-1.1.1w/apps/openssl s_server -accept 14126 -cert /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/servercert.pem -key /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/serverkey.pem   (stdin kept open: s_server quits on stdin EOF)
+  (server listening after 6 polls of 0.25s; now sending one HollowByte connection)
+HIT 1: BUF_MEM_grow_clean(str->max=21848, len=131076) -> allocation will be (len+3)/3*4 = 174772 bytes
+#0  BUF_MEM_grow_clean (str=0x5555556e1770, len=131076) at crypto/buffer/buffer.c:115
+#1  0x00007ffff7f67aee in grow_init_buf (s=0x55555570cb00, size=131076) at ssl/statem/statem.c:501
+#2  0x00007ffff7f67d9b in read_state_machine (s=0x55555570cb00) at ssl/statem/statem.c:610
+#3  0x00007ffff7f678e9 in state_machine (s=0x55555570cb00, server=1) at ssl/statem/statem.c:434
+#4  0x00007ffff7f67406 in ossl_statem_accept (s=0x55555570cb00) at ssl/statem/statem.c:255
+#5  0x00007ffff7f4bf50 in SSL_do_handshake (s=0x55555570cb00) at ssl/ssl_lib.c:3732
+=== [patched] gdb on 'openssl s_server': break BUF_MEM_grow_clean, one HollowByte connection ===
++ sleep 40 | LD_LIBRARY_PATH=/home/user/work/patched/build timeout 30 gdb -batch -x gdb_bufgrow.cmd --args /home/user/work/patched/build/apps/openssl s_server -accept 14126 -cert /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/servercert.pem -key /home/user/work/src_1.1.1w/openssl-1.1.1w/test/certs/serverkey.pem   (stdin kept open: s_server quits on stdin EOF)
+  (server listening after 6 polls of 0.25s; now sending one HollowByte connection)
+HIT 1: BUF_MEM_grow_clean(str->max=21848, len=16388) -> allocation will be (len+3)/3*4 = 21852 bytes
+#0  BUF_MEM_grow_clean (str=0x5555556e17e0, len=16388) at ../openssl-1.1.1w-ipalongpatch_20261102/crypto/buffer/buffer.c:115
+#1  0x00007ffff7f778b2 in grow_init_buf (s=0x55555570cb70, size=16388) at ../openssl-1.1.1w-ipalongpatch_20261102/ssl/statem/statem_lib.c:1285
+#2  0x00007ffff7f779b0 in tls_get_message_body (s=0x55555570cb70, len=0x7fffffffb658) at ../openssl-1.1.1w-ipalongpatch_20261102/ssl/statem/statem_lib.c:1364
+#3  0x00007ffff7f671d6 in read_state_machine (s=0x55555570cb70) at ../openssl-1.1.1w-ipalongpatch_20261102/ssl/statem/statem.c:649
+#4  0x00007ffff7f66dd9 in state_machine (s=0x55555570cb70, server=1) at ../openssl-1.1.1w-ipalongpatch_20261102/ssl/statem/statem.c:434
+#5  0x00007ffff7f668f6 in ossl_statem_accept (s=0x55555570cb70) at ../openssl-1.1.1w-ipalongpatch_20261102/ssl/statem/statem.c:255
+=== regression: normal handshakes and a >16 KiB certificate chain (multi-record Certificate message) with the PATCHED build ===
+chain file: 25 certificates, 20112 bytes of DER in total (> 16384 => Certificate message spans several records)
+(a) normal handshakes, patched server + patched client
+[tls12_small] New, TLSv1.2, Cipher is ECDHE-RSA-AES256-GCM-SHA384; HTTP 200: 1; Certificate handshake message: 819 bytes
+[tls13_small] New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384; HTTP 200: 1; Certificate handshake message: 822 bytes
+(b) big chain: patched client receiving a Certificate message > 16 KiB (multi-record)
+[tls12_bigchain_pp] New, TLSv1.2, Cipher is ECDHE-RSA-AES256-GCM-SHA384; HTTP 200: 1; Certificate handshake message: 21758 bytes
+21758
+[tls13_bigchain_pp] New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384; HTTP 200: 1; Certificate handshake message: 21811 bytes
+21811
+[tls12_bigchain_bp] New, TLSv1.2, Cipher is ECDHE-RSA-AES256-GCM-SHA384; HTTP 200: 1; Certificate handshake message: 21758 bytes
+21758
+(c) big chain: patched server, unpatched client (interoperability)
+[tls13_bigchain_pb] New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384; HTTP 200: 1; Certificate handshake message: 21811 bytes
+21811
+Certificate message sizes seen by the clients (TLS1.2 p/p, TLS1.3 p/p, TLS1.2 base-server/patched-client, TLS1.3 patched-server/base-client): 21758 21811 21758 21811 bytes
+REGRESSION: PASS
+
+=== VERDICT ===
+per-connection heap growth after the 9 byte header: BASE=154272 bytes, PATCHED=0 bytes
+VERDICT: PASS (unpatched pre-allocates ~170 KiB per 9-byte connection; patched grows init_buf only with received data)

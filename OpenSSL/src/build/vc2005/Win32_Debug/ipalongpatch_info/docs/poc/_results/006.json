@@ -1,0 +1,36 @@
+{
+ "nnn": "006",
+ "cve": "CVE-2024-5535",
+ "cveinfo": "SSL-select-next-proto-overread",
+ "log_file": "20261102_122754_006of033_CVE-2024-5535_SSL-select-next-proto-overread.log",
+ "start_jst": "2026/11/02 12:27:54 (JST)",
+ "end_jst": "2026/11/02 12:37:30 (JST)",
+ "duration": "00:09:36",
+ "verdict": "PASS",
+ "before_en": "client_len=0 -> out=client+1, outlen=client[0]: 64-byte adjacent secret returned and transmitted to the server in the NPN NextProtocol message; 1-byte buffer leaks 255 bytes (ASan heap-buffer-overflow READ of size 255 in tls_parse_stoc_npn extensions_clnt.c:1621); PROT_NONE page -> SIGSEGV at ssl_lib.c:2793; valgrind invalid read 0 bytes after a 0-byte block.",
+ "before_ja": "client_len=0 → out=client+1、outlen=client[0]: 隣接する 64 バイトの秘密が返却され NPN の NextProtocol メッセージでサーバへ送信; 1 バイトバッファから 255 バイト漏えい (ASan: tls_parse_stoc_npn extensions_clnt.c:1621 で heap-buffer-overflow READ of size 255); PROT_NONE ページで ssl_lib.c:2793 の SIGSEGV; valgrind は 0 バイトブロック直後の不正読み出し。",
+ "after_en": "Patched: OPENSSL_NPN_NO_OVERLAP with *out=NULL, *outlen=0 for empty/invalid lists, no out-of-bounds access (crash mode survives, ASan/valgrind clean); NPN handshake with an empty list aborts with internal error instead of leaking.",
+ "after_ja": "修正版: 空/不正リストでは *out=NULL、*outlen=0 の OPENSSL_NPN_NO_OVERLAP、境界外アクセス無し (crash モード生存、ASan/valgrind クリーン); 空リストの NPN ハンドシェイクは漏えいせず internal error で中止。",
+ "method_en": "C PoC with modes unit (9 vectors), oob (malloc(0)), crash (PROT_NONE page), leak (adjacent secret), npn/npn255 (real TLS 1.2 NPN connection over memory BIOs with an empty client list in the select callback, server prints the negotiated protocol), alpn (regression); run on BASE, BASE-ASAN, PATCHED, PATCHED-ASAN with gdb and valgrind.",
+ "method_ja": "C PoC: unit (9 ベクタ)、oob (malloc(0))、crash (PROT_NONE ページ)、leak (隣接秘密)、npn/npn255 (メモリ BIO 上の実 TLS 1.2 NPN 接続、選択コールバックで空リストを渡しサーバが交渉結果を表示)、alpn (回帰) の各モードを BASE, BASE-ASAN, PATCHED, PATCHED-ASAN で実行し gdb と valgrind を併用。",
+ "regression_en": "ALPN via SSL_select_next_proto(): overlap -> http/1.1 (server preference) on both sides; no overlap -> NO_OVERLAP + first client protocol, NOACK, handshake without ALPN; identical on all builds; valid-list vectors unchanged.",
+ "regression_ja": "SSL_select_next_proto() による ALPN: 重複あり → 双方 http/1.1 (サーバ優先); 重複なし → NO_OVERLAP + 先頭クライアントプロトコル、NOACK、ALPN 無しで完了; 全ビルドで同一; 有効リストのベクタも不変。",
+ "tools": [
+  "gcc",
+  "AddressSanitizer",
+  "valgrind memcheck",
+  "gdb",
+  "bash",
+  "python3 (deliverable generation)"
+ ],
+ "poc_files": [
+  "/home/user/work/poc/006_CVE-2024-5535/poc_5535.c",
+  "/home/user/work/poc/006_CVE-2024-5535/tlshelp.h",
+  "/home/user/work/poc/006_CVE-2024-5535/run_poc.sh",
+  "/home/user/work/poc/006_CVE-2024-5535/make_deliverables.py",
+  "/home/user/work/poc/006_CVE-2024-5535/mkdeliv.py",
+  "/home/user/work/poc/006_CVE-2024-5535/out/"
+ ],
+ "limitations_en": "Precondition is an application passing a zero-length client list (programming error, as in the advisory). ASan cannot see the malloc(0) overread (rounds to 1 byte); valgrind and the page-boundary crash mode cover it. Patched NPN with an empty list fails the handshake (internal error) rather than succeeding with an empty protocol.",
+ "limitations_ja": "前提はアプリが長さ 0 のクライアントリストを渡すこと (アドバイザリどおりのプログラミングミス)。ASan は malloc(0) の読み越しを見られない (1 バイトに丸める) ため valgrind とページ境界 crash モードで補った。修正版の空リスト NPN は空プロトコルで成功するのではなくハンドシェイク失敗 (internal error) となる。"
+}

@@ -1,0 +1,16 @@
+﻿chain file: 25 certificates, 20112 bytes of DER in total (> 16384 => Certificate message spans several records)
+(a) normal handshakes, patched server + patched client
+[tls12_small] New, TLSv1.2, Cipher is ECDHE-RSA-AES256-GCM-SHA384; HTTP 200: 1; Certificate handshake message: 819 bytes
+[tls13_small] New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384; HTTP 200: 1; Certificate handshake message: 822 bytes
+(b) big chain: patched client receiving a Certificate message > 16 KiB (multi-record)
+[tls12_bigchain_pp] New, TLSv1.2, Cipher is ECDHE-RSA-AES256-GCM-SHA384; HTTP 200: 1; Certificate handshake message: 21758 bytes
+21758
+[tls13_bigchain_pp] New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384; HTTP 200: 1; Certificate handshake message: 21811 bytes
+21811
+[tls12_bigchain_bp] New, TLSv1.2, Cipher is ECDHE-RSA-AES256-GCM-SHA384; HTTP 200: 1; Certificate handshake message: 21758 bytes
+21758
+(c) big chain: patched server, unpatched client (interoperability)
+[tls13_bigchain_pb] New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384; HTTP 200: 1; Certificate handshake message: 21811 bytes
+21811
+Certificate message sizes seen by the clients (TLS1.2 p/p, TLS1.3 p/p, TLS1.2 base-server/patched-client, TLS1.3 patched-server/base-client): 21758 21811 21758 21811 bytes
+REGRESSION: PASS

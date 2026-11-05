@@ -1,0 +1,42 @@
+﻿==1678== Memcheck, a memory error detector
+==1678== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1678== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==1678== Command: ./poc_rsa_patched inputs/rsa2048.pem inputs/ct_good.bin inputs/ct_bad_flip.bin inputs/ct_bad_type1.bin
+==1678== 
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023 (headers: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023, implicit-rejection ctrl in headers: yes)
+Ciphertext file: inputs/ct_good.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+Ciphertext file: inputs/ct_bad_flip.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  EVP_PKEY_decrypt(default)                      -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: inputs/ct_bad_type1.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  EVP_PKEY_decrypt(default)                      -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+==1678== 
+==1678== HEAP SUMMARY:
+==1678==     in use at exit: 0 bytes in 0 blocks
+==1678==   total heap usage: 3,343 allocs, 3,343 frees, 243,306 bytes allocated
+==1678== 
+==1678== All heap blocks were freed -- no leaks are possible
+==1678== 
+==1678== For lists of detected and suppressed errors, rerun with: -s
+==1678== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

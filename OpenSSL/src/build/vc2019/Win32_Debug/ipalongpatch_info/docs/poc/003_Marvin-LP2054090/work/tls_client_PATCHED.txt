@@ -1,0 +1,121 @@
+﻿Can't use SSL_get_servername
+depth=0 CN = cms-recipient
+verify return:1
+CONNECTED(00000003)
+---
+Certificate chain
+ 0 s:CN = cms-recipient
+   i:CN = cms-recipient
+---
+Server certificate
+-----BEGIN CERTIFICATE-----
+MIIDETCCAfmgAwIBAgIUO8jlXnLC8VE5gT/pp88+xdcf2QYwDQYJKoZIhvcNAQEL
+BQAwGDEWMBQGA1UEAwwNY21zLXJlY2lwaWVudDAeFw0yNjExMDIwMzA3NTlaFw0y
+NjExMDUwMzA3NTlaMBgxFjAUBgNVBAMMDWNtcy1yZWNpcGllbnQwggEiMA0GCSqG
+SIb3DQEBAQUAA4IBDwAwggEKAoIBAQDk033FtN8Xd9RlfZZVyD9d/2mKZUT19DPm
+Ong6KtMxDDDSZZAcQh0AoNRNckxGl86r6qEaBAkz95du57IOLAbanwifnorioK3s
+PSeMCyWHPxHJLWIYve8XVzzmfeOe08Hp4O/eXhoJ4nPRc/4m4HMJJQ/S1C/cL3BI
+4WYFNyplDlkZR035mnVOc0AuUvhEYfT1vS4hoXG0TbDbM2PkP7EmbcE51+FpncDr
+cfc+6NOs7NfGd5Kxyl8kYN46PcvrgrqeuPmH4tE45aIMkhTZF3JR7Ci1an4Wgsjh
+X/z0dy/LJwO+CgzGjy7DEowgE+T1Ycizby9bWY4IX976ubA6Sin9AgMBAAGjUzBR
+MB0GA1UdDgQWBBS97BmCtJgrJsgT70UtiNOkh+bMrTAfBgNVHSMEGDAWgBS97BmC
+tJgrJsgT70UtiNOkh+bMrTAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUA
+A4IBAQAg2j0kaB7D2pkDAYuHx5sI+rJOrC3/sdu2J0EY11m9NJ6vcNFYJOMa2BWK
+8gCcNJvxs5iOTFyfoXY5Ebl9NgXFOJoY7oCZKghR9VFiqf0OYRYMtzzhgzbw0DjD
+YPRm+F8IBPa6+UUYZOiwTmzokIGrwwdVJFCOcC1oJtE1Xn81lKH3OklZ6VLaNf1K
+8jIT648cgfk+eelKV+KuKgQ6DvEGWp6FVnbQ39ZjeEEEbWaHu45wDb/t05akgiuI
+voiM4Sz3uxwymMd0xN1iYisDVyMbRrVaWEgucCO9upz5vMxWESNrZFD3k1s4Qiqa
+xmK0Y1Rq9DZTgEg1UuXrScR7tTRQ
+-----END CERTIFICATE-----
+subject=CN = cms-recipient
+
+issuer=CN = cms-recipient
+
+---
+No client certificate CA names sent
+---
+SSL handshake has read 1133 bytes and written 464 bytes
+Verification: OK
+---
+New, SSLv3, Cipher is AES128-SHA
+Server public key is 2048 bit
+Secure Renegotiation IS supported
+Compression: NONE
+Expansion: NONE
+No ALPN negotiated
+SSL-Session:
+    Protocol  : TLSv1.2
+    Cipher    : AES128-SHA
+    Session-ID: 9ADFAAC6C649EBB5C705574BA65BBC422CD391D0C4F0F249A8D8D141FF20A151
+    Session-ID-ctx: 
+    Master-Key: 153F0654EE2A15E4E48DAE229D12DFAEA0BBC4826D31F5D691051111553E5B45A4AC0C66B957123F2E93B2481A616573
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    TLS session ticket lifetime hint: 7200 (seconds)
+    TLS session ticket:
+    0000 - 53 b6 89 eb 3c a6 6a 90-66 e4 a6 21 d4 83 28 84   S...<.j.f..!..(.
+    0010 - 8d 84 57 50 75 f7 6f 23-26 3e 90 60 3b d9 c7 f6   ..WPu.o#&>.`;...
+    0020 - 8c 65 74 f1 ce fc 8e e8-01 67 e1 0d 12 38 c1 f6   .et......g...8..
+    0030 - 5d 43 7e 90 1d 4e 05 65-16 88 31 74 32 08 2a 36   ]C~..N.e..1t2.*6
+    0040 - 4a df 0f 31 5d 55 e1 aa-0a 3b c3 45 68 65 d2 6f   J..1]U...;.Ehe.o
+    0050 - 17 cf a8 e9 04 02 fa 04-4f 4f 9c d2 cd 45 7f 07   ........OO...E..
+    0060 - e0 60 3a ff ea 8b 08 9e-8d 56 22 35 61 22 a6 99   .`:......V"5a"..
+    0070 - bc 96 6a 0a b0 3c ed a7-6d c8 7f 57 c0 35 1d c4   ..j..<..m..W.5..
+    0080 - 45 72 19 11 0b eb e0 7c-ee 6b 76 d4 e0 d1 34 99   Er.....|.kv...4.
+    0090 - 02 ad 93 80 48 61 41 7b-41 a1 59 bc 26 69 b9 f2   ....HaA{A.Y.&i..
+
+    Start Time: 1793589029
+    Timeout   : 7200 (sec)
+    Verify return code: 0 (ok)
+    Extended master secret: yes
+---
+HTTP/1.0 200 ok
+Content-type: text/html
+
+<HTML><BODY BGCOLOR="#ffffff">
+<pre>
+
+s_server -accept 44453 -key /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -cert work/cms_cert.pem -tls1_2 -cipher AES128-SHA -naccept 1 -www 
+Secure Renegotiation IS supported
+Ciphers supported in s_server binary
+TLSv1.3    :TLS_AES_256_GCM_SHA384    TLSv1.3    :TLS_CHACHA20_POLY1305_SHA256 
+TLSv1.3    :TLS_AES_128_GCM_SHA256    SSLv3      :AES128-SHA                
+---
+Ciphers common between both SSL end points:
+AES128-SHA
+Signature Algorithms: ECDSA+SHA256:ECDSA+SHA384:ECDSA+SHA512:Ed25519:Ed448:RSA-PSS+SHA256:RSA-PSS+SHA384:RSA-PSS+SHA512:RSA-PSS+SHA256:RSA-PSS+SHA384:RSA-PSS+SHA512:RSA+SHA256:RSA+SHA384:RSA+SHA512:ECDSA+SHA224:ECDSA+SHA1:RSA+SHA224:RSA+SHA1:DSA+SHA224:DSA+SHA1:DSA+SHA256:DSA+SHA384:DSA+SHA512
+Shared Signature Algorithms: ECDSA+SHA256:ECDSA+SHA384:ECDSA+SHA512:Ed25519:Ed448:RSA-PSS+SHA256:RSA-PSS+SHA384:RSA-PSS+SHA512:RSA-PSS+SHA256:RSA-PSS+SHA384:RSA-PSS+SHA512:RSA+SHA256:RSA+SHA384:RSA+SHA512:ECDSA+SHA224:ECDSA+SHA1:RSA+SHA224:RSA+SHA1:DSA+SHA224:DSA+SHA1:DSA+SHA256:DSA+SHA384:DSA+SHA512
+---
+New, SSLv3, Cipher is AES128-SHA
+SSL-Session:
+    Protocol  : TLSv1.2
+    Cipher    : AES128-SHA
+    Session-ID: 
+    Session-ID-ctx: 01000000
+    Master-Key: 153F0654EE2A15E4E48DAE229D12DFAEA0BBC4826D31F5D691051111553E5B45A4AC0C66B957123F2E93B2481A616573
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    Start Time: 1793589029
+    Timeout   : 7200 (sec)
+    Verify return code: 0 (ok)
+    Extended master secret: yes
+---
+   0 items in the session cache
+   0 client connects (SSL_connect())
+   0 client renegotiates (SSL_connect())
+   0 client connects that finished
+   1 server accepts (SSL_accept())
+   0 server renegotiates (SSL_accept())
+   1 server accepts that finished
+   0 session cache hits
+   0 session cache misses
+   0 session cache timeouts
+   0 callback cache hits
+   0 cache full overflows (128 allowed)
+---
+no client certificate available
+</pre></BODY></HTML>
+
+read:errno=0

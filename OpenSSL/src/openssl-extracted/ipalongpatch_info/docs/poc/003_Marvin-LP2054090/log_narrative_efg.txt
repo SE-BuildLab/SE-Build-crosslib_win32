@@ -1,0 +1,88 @@
+﻿=== e. Evidence for the UNPATCHED build (BASE) / 未パッチ版 (BASE) の証拠 ===
+
+[EN] The unpatched 1.1.1w reports every broken-padding ciphertext as an error, i.e. the padding
+oracle is exposed by the API: `pkeyutl -decrypt` prints "Public Key operation error" with
+"RSA_padding_check_PKCS1_type_2:pkcs decoding error" and "rsa_ossl_private_decrypt:padding check
+failed" and exits with status 1 without writing any output; `rsautl -decrypt` prints "RSA
+operation error"; RSA_private_decrypt() and EVP_PKEY_decrypt() return -1 with
+error:04065072 (padding check failed) for ct_bad_flip, ct_bad_type1, ct_bad_nosep,
+ct_bad_shortpad and ct_bad_first, while the three valid ciphertexts decrypt to "Hello Marvin"
+(12 bytes). The controls that disable implicit rejection do not exist in this build
+(`-pkeyopt rsa_pkcs1_implicit_rejection:0` -> "Can't set parameter", EVP_PKEY_CTX_ctrl returns
+-2, padding mode 8 -> "unknown padding type"). The OpenSSL 3.2 implicit-rejection test vectors
+fail on this build: evp_test "Completed 1499 tests with 33 errors" (PKEY_CTRL_INVALID for the
+Ctrl line, KEYOP_ERROR for every corrupted-ciphertext vector that expects a synthetic output).
+Timing (5000+5000 interleaved RSA_private_decrypt() calls): valid median 741524 ns vs invalid
+731673 ns in the final run (-1.3 %); the two earlier runs gave -0.26 % and -0.46 %. The
+difference is within the run-to-run noise of this shared VM, so no timing signal is claimed for
+1.1.1w (its padding check is already the constant-time version of CVE-2022-4304); the oracle that
+this item removes is the explicit error signal.
+
+[JA] 未パッチ版 1.1.1w は、パディングが壊れた暗号文すべてをエラーとして報告する。すなわちパディングオラクルが
+API から露出している: `pkeyutl -decrypt` は "Public Key operation error" と "RSA_padding_check_PKCS1_type_2:
+pkcs decoding error"、"rsa_ossl_private_decrypt:padding check failed" を出力し、出力ファイルを書かずに終了
+コード 1 で終了する。`rsautl -decrypt` は "RSA operation error" を出力する。RSA_private_decrypt() と
+EVP_PKEY_decrypt() は ct_bad_flip, ct_bad_type1, ct_bad_nosep, ct_bad_shortpad, ct_bad_first に対して
+error:04065072 (padding check failed) で -1 を返し、正当な 3 つの暗号文は "Hello Marvin" (12 バイト) に復号
+される。implicit rejection を無効化する制御はこのビルドには存在しない (`-pkeyopt rsa_pkcs1_implicit_rejection:0`
+-> "Can't set parameter"、EVP_PKEY_CTX_ctrl は -2 を返す、パディングモード 8 -> "unknown padding type")。
+OpenSSL 3.2 の implicit rejection テストベクタはこのビルドでは不合格: evp_test "Completed 1499 tests with 33
+errors" (Ctrl 行は PKEY_CTRL_INVALID、合成出力を期待する改変暗号文ベクタはすべて KEYOP_ERROR)。タイミング
+(RSA_private_decrypt() を正当/不正で交互に 5000 回ずつ): 最終実行では正当の中央値 741524 ns 対 不正 731673 ns
+(-1.3 %)、先行 2 回の実行では -0.26 % と -0.46 %。差はこの共有 VM の実行間ノイズの範囲内であり、1.1.1w に
+タイミング信号があるとは主張しない (パディング検査自体は CVE-2022-4304 で定数時間化済み)。本項目が除去する
+オラクルは明示的なエラー信号である。
+
+=== f. Evidence for the PATCHED build / パッチ版の証拠 ===
+
+[EN] The patched build never signals a padding failure through the default API: ct_bad_flip
+decrypts to a 229-byte synthetic message (sha256 5d4ec236cedc4b3d...), identical for the two
+pkeyutl runs, for rsautl and for the two RSA_private_decrypt() calls and EVP_PKEY_decrypt(); the
+other broken ciphertexts give different synthetic messages of different pseudo-random lengths
+(ct_bad_type1 84 bytes, ct_bad_nosep 51 bytes, ct_bad_shortpad 23 bytes, ct_bad_first 217 bytes),
+each deterministic. The valid ciphertexts still decrypt to "Hello Marvin". With implicit
+rejection disabled (`-pkeyopt rsa_pkcs1_implicit_rejection:0`, the numeric ctrl, or padding mode
+RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING) the classic error "padding check failed" is restored and the
+valid ciphertext still decrypts. The OpenSSL 3.2 vectors pass: evp_test "Completed 1499 tests with
+0 errors" (39 RSA-2048-2 / RSA-3072 Decrypt vectors, outputs byte-identical to upstream 3.2, which
+also proves interoperability of the synthetic messages). Timing: valid median 702928 ns vs
+invalid 703200 ns (+0.04 %; earlier runs -0.01 % and -0.62 %), i.e. no measurable difference.
+valgrind --leak-check=full on the implicit-rejection path: 0 errors, no leaks.
+
+[JA] パッチ版は既定の API ではパディング失敗を一切通知しない: ct_bad_flip は 229 バイトの合成メッセージ
+(sha256 5d4ec236cedc4b3d...) に復号され、pkeyutl の 2 回の実行、rsautl、RSA_private_decrypt() の 2 回の呼び出し、
+EVP_PKEY_decrypt() のすべてで同一である。他の壊れた暗号文はそれぞれ異なる疑似乱数長の合成メッセージ
+(ct_bad_type1 84 バイト、ct_bad_nosep 51 バイト、ct_bad_shortpad 23 バイト、ct_bad_first 217 バイト) になり、
+いずれも決定的である。正当な暗号文は引き続き "Hello Marvin" に復号される。implicit rejection を無効化
+(`-pkeyopt rsa_pkcs1_implicit_rejection:0`、数値 ctrl、またはパディングモード RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING)
+すると従来のエラー "padding check failed" に戻り、正当な暗号文は復号できる。OpenSSL 3.2 のベクタは合格:
+evp_test "Completed 1499 tests with 0 errors" (RSA-2048-2 / RSA-3072 の Decrypt ベクタ 39 個、出力は上流 3.2 と
+バイト単位で同一であり、合成メッセージの相互運用性の根拠にもなる)。タイミング: 正当 702928 ns 対 不正
+703200 ns (+0.04 %; 先行実行は -0.01 % と -0.62 %)、すなわち計測可能な差は無い。implicit rejection 経路への
+valgrind --leak-check=full: エラー 0、リーク無し。
+
+=== g. Regression / side-effect check / 回帰・副作用の確認 ===
+
+[EN] In both builds: CMS (`openssl cms -encrypt -binary ... -aes128` / `cms -decrypt`) and PKCS#7
+(`openssl smime -encrypt -binary` / `smime -decrypt`) round-trip with the right RSA key
+("plaintext matches"); decryption with a wrong key fails identically in both builds ("Error
+decrypting CMS/PKCS#7 structure", EVP_DecryptFinal_ex:bad decrypt — the pre-existing
+MMA-defence random content key), and with `cms -decrypt -debug_decrypt` both builds report the RSA
+key-transport failure itself ("RSA_padding_check_PKCS1_type_2:pkcs decoding error ...
+cms_RecipientInfo_ktri_decrypt:cms lib ... no matching recipient"), which shows that the
+cms_env.c hunk indeed keeps the explicit rejection for CMS key transport. TLS 1.2 with RSA key
+exchange: s_server/s_client (`-tls1_2 -cipher AES128-SHA`) negotiate "Cipher is AES128-SHA",
+"Verify return code: 0 (ok)" and the server page is received in both builds. The first script
+attempt failed for environmental reasons only (xxd missing, `openssl req` needing -config, S/MIME
+canonical CRLF conversion making cmp fail); those runs are kept below as history.
+
+[JA] 両ビルドで: CMS (`openssl cms -encrypt -binary ... -aes128` / `cms -decrypt`) と PKCS#7
+(`openssl smime -encrypt -binary` / `smime -decrypt`) は正しい RSA 鍵で往復復号に成功 ("plaintext matches")。
+誤った鍵での復号は両ビルドで同一に失敗 ("Error decrypting CMS/PKCS#7 structure"、EVP_DecryptFinal_ex:bad
+decrypt — 従来からの MMA 対策によるランダムなコンテンツ鍵)、`cms -decrypt -debug_decrypt` では両ビルドとも
+RSA 鍵転送の失敗そのもの ("RSA_padding_check_PKCS1_type_2:pkcs decoding error ...
+cms_RecipientInfo_ktri_decrypt:cms lib ... no matching recipient") を報告し、cms_env.c のハンクが CMS 鍵転送
+で明示的拒否を維持していることを示す。RSA 鍵交換の TLS 1.2: s_server/s_client (`-tls1_2 -cipher AES128-SHA`)
+は両ビルドで "Cipher is AES128-SHA"、"Verify return code: 0 (ok)" を示しサーバページを受信した。スクリプトの
+初回試行は環境要因のみで失敗した (xxd 不在、`openssl req` に -config が必要、S/MIME の正規化 CRLF 変換で cmp が
+不一致)。それらの実行結果も履歴として以下に残す。

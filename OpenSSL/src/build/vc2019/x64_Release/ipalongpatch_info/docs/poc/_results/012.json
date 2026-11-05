@@ -1,0 +1,40 @@
+{
+  "nnn": "012",
+  "cve": "CVE-2025-69419",
+  "cveinfo": "PKCS12-friendlyName-UTF8-OOB",
+  "log_file": "20261102_121342_012of033_CVE-2025-69419_PKCS12-friendlyName-UTF8-OOB.log",
+  "start_jst": "2026/11/02 12:13:42 (JST)",
+  "end_jst": "2026/11/02 12:27:22 (JST)",
+  "duration": "00:13:40",
+  "verdict": "PASS",
+  "before_en": "BASE-ASAN: heap-buffer-overflow WRITE of size 1 at p12_utl.c:217 (OPENSSL_uni2utf8 <- PKCS12_get_friendlyname), 1 byte before a 4-byte heap region, for a friendlyName BMPString of one code point >= U+0800 (U+3042 / U+FFFF); valgrind 'Invalid write of size 1 ... 1 bytes before a block of size 4'; gdb shows asclen == -1 at the NUL write.",
+  "before_ja": "BASE-ASAN: U+0800 以上の 1 文字 (U+3042 / U+FFFF) の friendlyName BMPString で p12_utl.c:217 (OPENSSL_uni2utf8 <- PKCS12_get_friendlyname) に heap-buffer-overflow WRITE of size 1 (4 バイト領域の 1 バイト前)。valgrind 'Invalid write of size 1 ... 1 bytes before a block of size 4'。gdb で NUL 書き込み時に asclen == -1。",
+  "after_en": "PATCHED/PATCHED-ASAN: PKCS12_get_friendlyname() returns NULL, exit 0, no ASan report, valgrind clean (no leak).",
+  "after_ja": "PATCHED/PATCHED-ASAN: PKCS12_get_friendlyname() が NULL を返し exit 0、ASan 報告無し、valgrind クリーン (リーク無し)。",
+  "method_en": "PKCS#12 made with openssl pkcs12 -export -certpbe NONE; Python DER re-encoder sets the friendlyName BMPString to a single U+3042/U+FFFF and recomputes the MAC; C program calls PKCS12_get_friendlyname() on each bag; ASan, valgrind, gdb; patched builds and regression names.",
+  "method_ja": "openssl pkcs12 -export -certpbe NONE で PKCS#12 を作成し、Python の DER 再エンコーダで friendlyName BMPString を U+3042/U+FFFF の 1 文字にして MAC を再計算。C プログラムで各バッグに PKCS12_get_friendlyname() を呼び、ASan・valgrind・gdb で確認。修正版と回帰用の名前でも実行。",
+  "regression_en": "Patched build decodes 'AB' and '<U+3042>A' correctly (also under ASan), openssl pkcs12 -info works, valgrind clean; names ending in a >= U+0800 character now yield NULL (same as upstream fix).",
+  "regression_ja": "修正版は 'AB' と '<U+3042>A' を正しく復元 (ASan 下でも)、openssl pkcs12 -info も動作、valgrind クリーン。末尾が U+0800 以上の名前は上流修正と同様 NULL を返す。",
+  "tools": [
+    "openssl pkcs12 (BASE/PATCHED)",
+    "python3 -I (make_bad.py)",
+    "gcc",
+    "AddressSanitizer",
+    "valgrind",
+    "gdb"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/012_CVE-2025-69419/make_bad.py",
+    "/home/user/work/poc/012_CVE-2025-69419/poc_friendlyname.c",
+    "/home/user/work/poc/012_CVE-2025-69419/build.sh",
+    "/home/user/work/poc/012_CVE-2025-69419/run_poc.sh",
+    "/home/user/work/poc/012_CVE-2025-69419/good.p12",
+    "/home/user/work/poc/012_CVE-2025-69419/bad_u3042.p12",
+    "/home/user/work/poc/012_CVE-2025-69419/bad_uffff.p12",
+    "/home/user/work/poc/012_CVE-2025-69419/mixed.p12",
+    "/home/user/work/poc/012_CVE-2025-69419/trailing.p12",
+    "/home/user/work/poc/012_CVE-2025-69419/out/ (raw captures)"
+  ],
+  "limitations_en": "CLI tool does not reach the bug (uses OPENSSL_uni2asc), so a C program using PKCS12_get_friendlyname() is the trigger; non-sanitized build shows silent heap-header corruption only; fix returns NULL for names ending in a >= U+0800 character (upstream behaviour).",
+  "limitations_ja": "CLI は OPENSSL_uni2asc を使うため非到達で、PKCS12_get_friendlyname() を呼ぶ C プログラムで発動。非サニタイザビルドでは静かなヒープヘッダ破壊のみ。修正は末尾 U+0800 以上の名前に NULL を返す (上流と同じ挙動)。"
+}

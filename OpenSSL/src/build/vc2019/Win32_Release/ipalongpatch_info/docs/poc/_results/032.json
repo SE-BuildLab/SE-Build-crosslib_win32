@@ -1,0 +1,38 @@
+{
+ "nnn": "032",
+ "cve": "CVE-2026-84782",
+ "cveinfo": "DTLS-retransmit-stale-init-off",
+ "log_file": "20261102_130106_032of033_CVE-2026-84782_DTLS-retransmit-stale-init-off.log",
+ "start_jst": "2026/11/02 13:01:06 (JST)",
+ "end_jst": "2026/11/02 13:22:21 (JST)",
+ "duration": "00:21:15",
+ "verdict": "PASS",
+ "before_en": "Patched-tree test/dtlstest.c against the unpatched library: not ok 6 test_dtls_client_retransmit (write_calls 7 vs 2), not ok 7 test_dtls_server_retransmit (9 vs 3). Dump: timer retransmission built from stale init_off - 'frag_off 0' ClientHello fragment with ALPN padding instead of version/random (149/231 bytes differ), 432 zero bytes from beyond the 906-byte message, server 'ServerHello' record carrying 57 Certificate bytes; resumed SSL_connect/SSL_accept aborts on ossl_assert statem_dtls.c:128 (exit 134).",
+ "before_ja": "修正版ツリーの test/dtlstest.c を未修正ライブラリで実行: not ok 6 test_dtls_client_retransmit (write_calls 7 対 2)、not ok 7 test_dtls_server_retransmit (9 対 3)。ダンプ: 古い init_off からのタイマ再送 — version/random の代わりに ALPN パディングを運ぶ 'frag_off 0' ClientHello フラグメント (231 バイト中 149 相違)、906 バイトのメッセージ外からの 432 バイトのゼロ、Certificate の 57 バイトを運ぶサーバ 'ServerHello' レコード; 再開した SSL_connect/SSL_accept は ossl_assert statem_dtls.c:128 で abort (終了コード 134)。",
+ "after_en": "Patched: all 7 dtlstest tests pass (PATCHED, PATCHED-ASAN); DTLSv1_handle_timeout() returns 0 and writes nothing while the write is parked; the resumed call completes the flight with contiguous fragments (frag_off 231/462/693; Certificate 380/611) and SSL_ERROR_WANT_READ; valgrind 0 errors, no leaks.",
+ "after_ja": "修正版: dtlstest の 7 テスト全合格 (PATCHED、PATCHED-ASAN); 書き込みパーク中は DTLSv1_handle_timeout() が 0 を返し何も書かない; 再開呼び出しは連続するフラグメント (frag_off 231/462/693; Certificate 380/611) でフライトを完了し SSL_ERROR_WANT_READ; valgrind エラー 0、リーク無し。",
+ "method_en": "Compile the patched tree's test/dtlstest.c + ssltestlib.c against BASE/BASE-ASAN/PATCHED/PATCHED-ASAN with each build's libtestutil.a and run; own testutil-based dump program with a fragment-limited BIO that records and parses every datagram, fires the retransmission timer 3 times while the write is parked, compares retransmitted fragments with the original bytes and then resumes the handshake; valgrind and ASan runs.",
+ "method_ja": "修正版ツリーの test/dtlstest.c + ssltestlib.c を各ビルドの libtestutil.a とともに BASE/BASE-ASAN/PATCHED/PATCHED-ASAN でコンパイルして実行; フラグメント制限 BIO で全データグラムを記録・解析し、書き込みパーク中に再送タイマを 3 回発火させ、再送フラグメントを元のバイト列と比較してからハンドシェイクを再開する testutil ベースの自作ダンププログラム; valgrind と ASan での実行。",
+ "regression_en": "The 5 pre-existing dtlstest tests pass on all builds; the patched library resumes and completes a parked flight on both client and server side; DTLS 1.2 s_client/s_server handshakes with the patched build verified in item 027.",
+ "regression_ja": "既存 5 つの dtlstest テストは全ビルドで合格; 修正版ライブラリはクライアント・サーバ双方でパークしたフライトを再開・完了; 修正版での DTLS 1.2 s_client/s_server ハンドシェイクは項目 027 で確認。",
+ "tools": [
+  "gcc",
+  "OpenSSL testutil framework (libtestutil.a) + ssltestlib.c",
+  "AddressSanitizer",
+  "valgrind",
+  "bash",
+  "python3 (deliverable generation)"
+ ],
+ "poc_files": [
+  "/home/user/work/poc/032_CVE-2026-84782/dtlstest_patched.c (copy of the patched test/dtlstest.c)",
+  "/home/user/work/poc/032_CVE-2026-84782/ssltestlib.c",
+  "/home/user/work/poc/032_CVE-2026-84782/ssltestlib.h",
+  "/home/user/work/poc/032_CVE-2026-84782/dtls_retransmit_dump.c",
+  "/home/user/work/poc/032_CVE-2026-84782/run_poc.sh",
+  "/home/user/work/poc/032_CVE-2026-84782/make_deliverables.py",
+  "/home/user/work/poc/032_CVE-2026-84782/mkdeliv.py",
+  "/home/user/work/poc/032_CVE-2026-84782/out/"
+ ],
+ "limitations_en": "The bytes disclosed from beyond the message are zeros here (freshly allocated init_buf); real heap content disclosure requires a longer-lived buffer. The reads stay within the 16 KiB init_buf, so no ASan/valgrind error; the crash shown is OpenSSL's debug-build assertion (release builds fail the handshake with SSL_ERROR_SYSCALL).",
+ "limitations_ja": "ここでメッセージ外から漏えいしたバイトはゼロ (新規確保された init_buf)。実際のヒープ内容漏えいにはより長く使われたバッファが必要。読み出しは 16 KiB の init_buf 内に留まるため ASan/valgrind エラーは無し; 示したクラッシュは OpenSSL デバッグビルドのアサーション (リリースビルドでは SSL_ERROR_SYSCALL でハンドシェイク失敗)。"
+}

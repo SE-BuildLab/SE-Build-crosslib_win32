@@ -1,0 +1,8 @@
+﻿[server] OpenSSL 1.1.1w  11 Sep 2023 listening on 127.0.0.1:14026, expecting 50 connections
+P0 before accepting:                                         heap_in_use=    165456 bytes  VmRSS=   5456 kB  VmData=    400 kB
+P1 all connections accepted, SSL_accept() called, no data yet: heap_in_use=   3786240 bytes  VmRSS=   7812 kB  VmData=   3940 kB
+   per-connection fixed cost: 72415 bytes
+P2 every connection delivered its 9 byte header, SSL_accept() -> WANT_READ: heap_in_use=  11499840 bytes  VmRSS=  14488 kB  VmData=  12540 kB
+   50 connections are now waiting for a ClientHello message body that never comes
+   heap growth caused by the 9 byte headers: 7713600 bytes total = 154272 bytes per connection
+RESULT: per-connection growth after the header = 154272 bytes (VULNERABLE: init_buf pre-allocated to the claimed size)

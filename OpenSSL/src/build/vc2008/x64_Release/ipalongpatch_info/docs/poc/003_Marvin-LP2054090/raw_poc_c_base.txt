@@ -1,0 +1,73 @@
+﻿Library: OpenSSL 1.1.1w  11 Sep 2023 (headers: OpenSSL 1.1.1w  11 Sep 2023, implicit-rejection ctrl in headers: no)
+Ciphertext file: inputs/ct_good.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: inputs/ct_good2.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: inputs/ct_good_manual.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: inputs/ct_bad_flip.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: inputs/ct_bad_type1.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: inputs/ct_bad_nosep.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: inputs/ct_bad_shortpad.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: inputs/ct_bad_first.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type

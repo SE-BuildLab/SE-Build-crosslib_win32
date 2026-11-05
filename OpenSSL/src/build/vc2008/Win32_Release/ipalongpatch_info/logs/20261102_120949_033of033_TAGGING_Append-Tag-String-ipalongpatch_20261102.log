@@ -1,0 +1,124 @@
+﻿=== Verification environment / 検証環境 (captured 2026/11/02 11:49:23 JST) ===
+Hostname: vm
+IP addresses: 192.0.2.2
+Kernel: Linux 6.18.44-fc-v185 #1 SMP PREEMPT_DYNAMIC @0 x86_64 GNU/Linux
+OS: Ubuntu 24.04.5 LTS
+CPU: Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical CPUs; flags include aes=1 avx2=avx2
+Memory: 15Gi total
+Virtualization/container: systemd-detect-virt=docker; /.dockerenv=absent; cgroup=9:name=systemd:/
+Execution environment: Anthropic Claude Code cloud sandbox (claude.ai 'Claude Code on the web', ephemeral Linux VM/container, environment id env_01JCo7DCPLioAiaSziA5LodW, session session_0114L1TChBqUkTphQ7qaytCr); not a developer workstation
+AI: Claude Mythos 5.1 (model id claude-mythos-5-1), reasoning effort: max; session start 2026/11/02 10:48:22 (JST)
+Compilers/tools: gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0; Ubuntu clang version 18.1.3 (1ubuntu1); x86_64-w64-mingw32-gcc (GCC) 13-win32; GNU Make 4.3; perl 5, version 38, subversion 2 (v5.38.2) built for x86_64-linux-gnu-thread-multi; Python 3.13.18; GNU gdb (Ubuntu 15.1-1ubuntu1~24.04.1) 15.1; valgrind-3.22.0; wine-9.0 (Ubuntu 9.0~repack-4build3)
+libc: ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39
+Target software: OpenSSL 1.1.1w (openssl-1.1.1w.tar.gz, SHA256 cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8) -> openssl-1.1.1w-ipalongpatch_20261102
+Reference: Ubuntu 20.04 openssl 1.1.1f-1ubuntu2.24+esm6 (openssl_1.1.1f-1ubuntu2.24+esm6.debian.tar.xz SHA256 d57aba66e63067e3297086202045c056989b1d1e672bc5ca66ecfca3964d1dc0)
+Builds used: unpatched 1.1.1w debug build (/home/user/work/base/openssl-1.1.1w: ./config -d shared enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers), unpatched ASan build (/home/user/work/base_asan, same options + enable-asan), patched debug build (/home/user/work/patched/build, same options), patched ASan build (/home/user/work/patched/build-asan), patched mingw64 cross build (/home/user/work/patched/build-mingw64)
+=== end of environment / 環境情報ここまで ===
+
+Verification start: 2026/11/02 12:09:49 (JST)
+
+Item 033 of 033 - TAGGING - Append-Tag-String-ipalongpatch_20261102
+=====================================================================
+
+[EN] This item is not a vulnerability fix. Patch 033 appends the IPALongPatch tag
+string "[ipalongpatch_20261102]" to OPENSSL_VERSION_TEXT in include/openssl/opensslv.h
+so that a patched build can be recognised externally ("openssl version",
+OpenSSL_version(OPENSSL_VERSION)). The numeric version OPENSSL_VERSION_NUMBER
+(0x1010117fL = 1.1.1w) and SHLIB_VERSION_NUMBER ("1.1") are deliberately left
+unchanged so that compile-time and run-time version checks of applications keep
+working exactly as with OpenSSL 1.1.1w.
+[JA] 本項目は脆弱性修正ではありません。パッチ 033 は include/openssl/opensslv.h の
+OPENSSL_VERSION_TEXT に IPALongPatch のタグ文字列 "[ipalongpatch_20261102]" を追記し、
+パッチ済みビルドを外形的に識別できるようにするものです ("openssl version"、
+OpenSSL_version(OPENSSL_VERSION))。数値バージョン OPENSSL_VERSION_NUMBER
+(0x1010117fL = 1.1.1w) と SHLIB_VERSION_NUMBER ("1.1") は意図的に変更しておらず、
+アプリケーションのコンパイル時・実行時のバージョン検査は OpenSSL 1.1.1w と全く同じに
+動作します。
+
+[EN] Verification method: a small C program (vercheck.c) prints the compile-time macros
+and the run-time values reported by libcrypto; it is built once against the unpatched
+1.1.1w build and once against the patched build. In addition "openssl version" is run
+for the unpatched Linux build, the patched Linux build and the patched Windows x64
+(mingw64) build executed under wine.
+[JA] 検証方法: 小さな C プログラム (vercheck.c) でコンパイル時マクロと libcrypto が
+実行時に返す値を表示し、未パッチ 1.1.1w ビルドとパッチ済みビルドのそれぞれに対して
+ビルド・実行しました。さらに "openssl version" を未パッチ Linux 版、パッチ済み Linux 版、
+wine 上で実行したパッチ済み Windows x64 (mingw64) 版で実行しました。
+
+--- vercheck.c ---
+#include <stdio.h>
+#include <openssl/opensslv.h>
+#include <openssl/crypto.h>
+int main(void)
+{
+    printf("compile-time OPENSSL_VERSION_NUMBER = 0x%09lxL\n", (unsigned long)OPENSSL_VERSION_NUMBER);
+    printf("compile-time OPENSSL_VERSION_TEXT   = \"%s\"\n", OPENSSL_VERSION_TEXT);
+    printf("runtime OpenSSL_version_num()       = 0x%09lxL\n", (unsigned long)OpenSSL_version_num());
+    printf("runtime OpenSSL_version(OPENSSL_VERSION) = \"%s\"\n", OpenSSL_version(OPENSSL_VERSION));
+    printf("SHLIB_VERSION_NUMBER = \"%s\"\n", SHLIB_VERSION_NUMBER);
+    return 0;
+}
+
+--- build commands ---
+gcc -O0 -g -I/home/user/work/base/openssl-1.1.1w/include vercheck.c -L/home/user/work/base/openssl-1.1.1w -lcrypto -Wl,-rpath,/home/user/work/base/openssl-1.1.1w -o vercheck_base
+gcc -O0 -g -I/home/user/work/patched/build/include -I/home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/include vercheck.c -L/home/user/work/patched/build -lcrypto -Wl,-rpath,/home/user/work/patched/build -o vercheck_patched
+
+=== BASE (unpatched 1.1.1w) ===
+compile-time OPENSSL_VERSION_NUMBER = 0x01010117fL
+compile-time OPENSSL_VERSION_TEXT   = "OpenSSL 1.1.1w  11 Sep 2023"
+runtime OpenSSL_version_num()       = 0x01010117fL
+runtime OpenSSL_version(OPENSSL_VERSION) = "OpenSSL 1.1.1w  11 Sep 2023"
+SHLIB_VERSION_NUMBER = "1.1"
+
+=== PATCHED (openssl-1.1.1w-ipalongpatch_20261102) ===
+compile-time OPENSSL_VERSION_NUMBER = 0x01010117fL
+compile-time OPENSSL_VERSION_TEXT   = "OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023"
+runtime OpenSSL_version_num()       = 0x01010117fL
+runtime OpenSSL_version(OPENSSL_VERSION) = "OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023"
+SHLIB_VERSION_NUMBER = "1.1"
+
+=== openssl version ===
+base    : OpenSSL 1.1.1w  11 Sep 2023
+patched : OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+patched (mingw64 under wine): OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+
+=== diff of include/openssl/opensslv.h (patch 033) ===
+-# define OPENSSL_VERSION_TEXT    "OpenSSL 1.1.1w  11 Sep 2023"
++/*
++ * IPALongPatch: openssl-1.1.1w-ipalongpatch_20261102 --- PATCH_BEGIN ---
++ * DNNT 261102_EEHXW5 IPALongPatch openssl-1.1.1w-ipalongpatch_20261102 OpenSSL_1.1.1f_From_Ubuntu
++ * Generated by generative AI: Claude Mythos 5.1 (model id claude-mythos-5-1,
++ * reasoning effort: max). Session start: 2026/11/02 10:48:22 (JST). Patch
++ * generated: 2026/11/02 11:41:06 (JST).
++ * Fixes TAGGING: (not a vulnerability) append the IPALongPatch tag string to
++ * the human readable version text so that a patched build can be recognised
++ * externally (e.g. 'openssl version', OpenSSL_version(OPENSSL_VERSION)), while
++ * OPENSSL_VERSION_NUMBER and the numeric version components stay unchanged so
++ * that version checks keep working.
++ * Source: IPALongPatch rule [PER_OSS_TAGGING_RULES:VER261102].
++ * Change: OPENSSL_VERSION_TEXT: 'OpenSSL 1.1.1w  11 Sep 2023' -> 'OpenSSL
++ * 1.1.1w [ipalongpatch_20261102]  11 Sep 2023'. The version token (field 2)
++ * and the release date are unchanged; only the tag is inserted between them.
++ */
++# define OPENSSL_VERSION_TEXT    "OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023"
++/* IPALongPatch: openssl-1.1.1w-ipalongpatch_20261102 --- PATCH_END --- */
+
+[EN] Result: OPENSSL_VERSION_NUMBER and OpenSSL_version_num() are identical for both
+builds (0x1010117fL); only the text changed from "OpenSSL 1.1.1w  11 Sep 2023" to
+"OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023". The second whitespace separated
+token ("1.1.1w") and the release date are unchanged, so scripts that parse
+"openssl version" output keep working. The full test suite (make test: 159 recipe
+files, 2658 tests, Result: PASS) was run on the tagged tree, and 13 recipe files
+(194 tests) of the Windows x64 build were run under wine (Result: PASS).
+[JA] 結果: OPENSSL_VERSION_NUMBER と OpenSSL_version_num() は両ビルドで同一
+(0x1010117fL) で、文字列のみ "OpenSSL 1.1.1w  11 Sep 2023" から
+"OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023" に変わりました。空白区切りの
+第 2 トークン ("1.1.1w") とリリース日付は不変のため、"openssl version" の出力を解析する
+スクリプトは従来どおり動作します。タグ付与後のツリーでテストスイート全体 (make test:
+159 レシピファイル、2658 テスト、Result: PASS) を実行し、Windows x64 版についても
+13 レシピファイル (194 テスト) を wine 上で実行して合格 (Result: PASS) しました。
+
+Verification end: 2026/11/02 12:09:51 (JST)
+Duration: 00:00:02
+
+Verdict: PASS (version number unchanged, tag string present in all three builds) / 合格 (バージョン番号は不変、3 ビルドすべてでタグ文字列を確認)

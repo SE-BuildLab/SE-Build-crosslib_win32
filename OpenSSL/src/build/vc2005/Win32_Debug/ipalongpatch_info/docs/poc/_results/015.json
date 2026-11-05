@@ -1,0 +1,42 @@
+{
+  "nnn": "015",
+  "cve": "CVE-2026-22795",
+  "cveinfo": "PKCS12-attr-type-confusion-DoS",
+  "log_file": "20261102_121856_015of033_CVE-2026-22795_PKCS12-attr-type-confusion-DoS.log",
+  "start_jst": "2026/11/02 12:18:56 (JST)",
+  "end_jst": "2026/11/02 12:38:29 (JST)",
+  "duration": "00:19:33",
+  "verdict": "PASS",
+  "before_en": "Unpatched 1.1.1w: PKCS12_parse() (API, openssl x509/pkey -inform PKCS12) SIGSEGV when the certificate bag's friendlyName or localKeyID attribute value is BOOLEAN: ASN1_TYPE union holds 0xff, dereferenced in ASN1_STRING_to_UTF8 (a_strex.c:611, in=0xff) or parse_bag (p12_kiss.c:217, lkid=0xff); ASan SEGV on 0x103/0x107 (4/4).",
+  "before_ja": "未修正 1.1.1w: 証明書バッグの friendlyName または localKeyID 属性値が BOOLEAN だと PKCS12_parse() (API、openssl x509/pkey -inform PKCS12) が SIGSEGV。ASN1_TYPE 共用体の 0xff が ASN1_STRING_to_UTF8 (a_strex.c:611、in=0xff) または parse_bag (p12_kiss.c:217、lkid=0xff) で参照される。ASan は 0x103/0x107 の SEGV (4/4)。",
+  "after_en": "Patched build: PKCS12_parse returns 0 with 'PKCS12_parse:parse error' for all wrong-typed attributes; CLI exits 1; no crash, no ASan report (10/10).",
+  "after_ja": "修正版: 誤型属性すべてで PKCS12_parse が 'PKCS12_parse:parse error' を出して 0 を返し、CLI は exit 1。クラッシュ・ASan 報告無し (10/10)。",
+  "method_en": "PKCS#12 with unencrypted cert bag (-certpbe NONE); Python DER re-encoder swaps the attribute value type (BOOLEAN/NULL/UTF8String) and recomputes the MAC; C program calling PKCS12_parse and openssl x509/pkey -inform PKCS12 on BASE/BASE-ASAN/PATCHED/PATCHED-ASAN; gdb; valgrind.",
+  "method_ja": "非暗号化証明書バッグ (-certpbe NONE) の PKCS#12 を作り、Python の DER 再エンコーダで属性値の型を BOOLEAN/NULL/UTF8String に変えて MAC を再計算。PKCS12_parse を呼ぶ C プログラムと openssl x509/pkey -inform PKCS12 を BASE/BASE-ASAN/PATCHED/PATCHED-ASAN で実行、gdb、valgrind。",
+  "regression_en": "good.p12/good_nopass.p12 parse with alias 'test' and key on the patched build (also under ASan); openssl pkey -inform PKCS12 and pkcs12 -info work; patched-exported file parses; valgrind clean.",
+  "regression_ja": "修正版で good.p12/good_nopass.p12 がエイリアス 'test' と鍵付きで解析できる (ASan 下も)。openssl pkey -inform PKCS12 と pkcs12 -info も動作、修正版エクスポートのファイルも解析可、valgrind クリーン。",
+  "tools": [
+    "openssl pkcs12/x509/pkey (BASE/PATCHED)",
+    "python3 -I (make_bad.py)",
+    "gcc",
+    "gdb",
+    "AddressSanitizer",
+    "valgrind"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/015_CVE-2026-22795/make_bad.py",
+    "/home/user/work/poc/015_CVE-2026-22795/poc_parse.c",
+    "/home/user/work/poc/015_CVE-2026-22795/build.sh",
+    "/home/user/work/poc/015_CVE-2026-22795/run_poc.sh",
+    "/home/user/work/poc/015_CVE-2026-22795/good.p12",
+    "/home/user/work/poc/015_CVE-2026-22795/good_nopass.p12",
+    "/home/user/work/poc/015_CVE-2026-22795/bad_fname_bool.p12",
+    "/home/user/work/poc/015_CVE-2026-22795/bad_lkid_bool.p12",
+    "/home/user/work/poc/015_CVE-2026-22795/bad_fname_null.p12",
+    "/home/user/work/poc/015_CVE-2026-22795/bad_fname_utf8.p12",
+    "/home/user/work/poc/015_CVE-2026-22795/badnp_fname_bool.p12",
+    "/home/user/work/poc/015_CVE-2026-22795/out/ (raw captures)"
+  ],
+  "limitations_en": "Only BOOLEAN values crash; patched build also rejects ASN1_STRING-compatible wrong types (upstream behaviour); s_client LDAP hardening in the same patch not exercised.",
+  "limitations_ja": "クラッシュは BOOLEAN 値のみ。修正版は ASN1_STRING 互換の誤型も拒否 (上流と同じ)。同パッチの s_client LDAP 堅牢化は未検証。"
+}

@@ -1,0 +1,34 @@
+{
+  "nnn": "024",
+  "cve": "CVE-2026-34180",
+  "cveinfo": "ASN1-STRING-set-len-truncation",
+  "log_file": "20261102_123847_024of033_CVE-2026-34180_ASN1-STRING-set-len-truncation.log",
+  "start_jst": "2026/11/02 12:38:47 (JST)",
+  "end_jst": "2026/11/02 12:55:07 (JST)",
+  "duration": "00:16:20",
+  "verdict": "PASS",
+  "before_en": "Unpatched 1.1.1w: d2i_ASN1_OCTET_STRING() on a 2^31+1 byte element truncates the length to -2147483647 (asn1_ex_c2i int parameter) and ASN1_STRING_set() calls strlen() on the content, reading past the buffer: SIGSEGV at a guard page (gdb frames show len_in=-2147483647), ASan heap-buffer-overflow READ of size 2147483650 for a heap buffer.",
+  "before_ja": "未修正 1.1.1w: 2^31+1 バイト要素への d2i_ASN1_OCTET_STRING() が長さを -2147483647 に切り捨て (asn1_ex_c2i の int 引数)、ASN1_STRING_set() が内容に strlen() を適用してバッファの先を読む。ガードページで SIGSEGV (gdb フレームに len_in=-2147483647)、ヒープバッファでは ASan heap-buffer-overflow READ of size 2147483650。",
+  "after_en": "Patched build: 'asn1_ex_c2i:too long', d2i returns NULL, no crash, no ASan report (3/3).",
+  "after_ja": "修正版: 'asn1_ex_c2i:too long' で d2i が NULL を返し、クラッシュ・ASan 報告無し (3/3)。",
+  "method_en": "C program decodes an OCTET STRING with a 0x80000001-byte content ending at a PROT_NONE guard page (or in a heap buffer) via d2i_ASN1_OCTET_STRING on BASE (gdb), BASE-ASAN, PATCHED, PATCHED-ASAN; regression with small/1 GiB elements, the patched build's asn1_*_test, openssl x509/smime/asn1parse and valgrind.",
+  "method_ja": "C プログラムで内容 0x80000001 バイトの OCTET STRING を PROT_NONE ガードページ直前 (またはヒープバッファ) に置き d2i_ASN1_OCTET_STRING で復号。BASE (gdb)、BASE-ASAN、PATCHED、PATCHED-ASAN で実行。回帰確認は小さな要素と 1 GiB 要素、修正版ビルドの asn1_*_test、openssl x509/smime/asn1parse、valgrind。",
+  "regression_en": "Small and 1 GiB elements decode correctly on the patched build (also under ASan/valgrind); asn1_* unit tests pass; X.509/PKCS#7 decoding with patched openssl works.",
+  "regression_ja": "修正版で小さな要素と 1 GiB 要素が正しく復号 (ASan/valgrind 下も)。asn1_* 単体テスト合格。修正版 openssl の X.509/PKCS#7 復号も正常。",
+  "tools": [
+    "gcc",
+    "gdb",
+    "AddressSanitizer",
+    "valgrind",
+    "OpenSSL unit tests (asn1_*_test of the patched build)",
+    "openssl x509/smime/asn1parse"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/024_CVE-2026-34180/poc_c2i.c",
+    "/home/user/work/poc/024_CVE-2026-34180/build.sh",
+    "/home/user/work/poc/024_CVE-2026-34180/run_poc.sh",
+    "/home/user/work/poc/024_CVE-2026-34180/out/ (raw captures)"
+  ],
+  "limitations_en": "Needs >2 GiB input to a d2i_* function (C program with synthetic data); the memory-disclosure variant was not demonstrated, only the over-read crash.",
+  "limitations_ja": "d2i_* 関数への 2 GiB 超の入力が必要 (合成データの C プログラム)。メモリ漏えいの変種は未実証で、境界外読み出しによるクラッシュのみ実証。"
+}

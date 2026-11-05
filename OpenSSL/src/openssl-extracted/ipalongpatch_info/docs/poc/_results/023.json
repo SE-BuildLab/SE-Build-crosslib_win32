@@ -1,0 +1,34 @@
+{
+  "nnn": "023",
+  "cve": "CVE-2026-7383",
+  "cveinfo": "ASN1-mbstring-ncopy-int-overflow",
+  "log_file": "20261102_123829_023of033_CVE-2026-7383_ASN1-mbstring-ncopy-int-overflow.log",
+  "start_jst": "2026/11/02 12:38:29 (JST)",
+  "end_jst": "2026/11/02 12:55:48 (JST)",
+  "duration": "00:17:19",
+  "verdict": "PASS",
+  "before_en": "Unpatched 1.1.1w: ASN1_mbstring_ncopy() with 2^30 ASCII characters and mask B_ASN1_UNIVERSALSTRING computes outlen = 0 (int overflow of nchar << 2, shown in gdb), allocates 1 byte and crashes with SIGSEGV in cpy_univ; ASan reports heap-buffer-overflow WRITE of size 1 right after the 1-byte region (a_mbstr.c:325 <- :235 <- :198).",
+  "before_ja": "未修正 1.1.1w: 2^30 文字の ASCII と mask B_ASN1_UNIVERSALSTRING で ASN1_mbstring_ncopy() が outlen = 0 (nchar << 2 の int オーバーフロー、gdb で確認) を計算して 1 バイトを確保し、cpy_univ で SIGSEGV。ASan は 1 バイト領域直後への heap-buffer-overflow WRITE of size 1 を報告 (a_mbstr.c:325 <- :235 <- :198)。",
+  "after_en": "Patched build: returns -1 with ASN1_R_STRING_TOO_LONG for both the UniversalString and the BMPString case, *out = NULL, no crash, no ASan report; INT_MAX/4 characters still accepted.",
+  "after_ja": "修正版: UniversalString と BMPString の両ケースで ASN1_R_STRING_TOO_LONG を出して -1 を返し *out = NULL、クラッシュ・ASan 報告無し。INT_MAX/4 文字は引き続き受理。",
+  "method_en": "C program mmaps a 1 GiB 'A' buffer and calls ASN1_mbstring_ncopy(MBSTRING_ASC -> UNIVERSALSTRING/BMPSTRING); run on BASE (gdb), BASE-ASAN, PATCHED, PATCHED-ASAN one at a time; regression with short strings, INT_MAX/4 characters, the patched build's ASN.1 unit tests, openssl req -utf8 and valgrind.",
+  "method_ja": "C プログラムで 1 GiB の 'A' バッファを mmap し ASN1_mbstring_ncopy(MBSTRING_ASC -> UNIVERSALSTRING/BMPSTRING) を呼ぶ。BASE (gdb)、BASE-ASAN、PATCHED、PATCHED-ASAN で 1 つずつ実行。回帰確認は短い文字列、INT_MAX/4 文字、修正版ビルドの ASN.1 単体テスト、openssl req -utf8、valgrind。",
+  "regression_en": "Short-string conversions identical to the unpatched build (also under ASan/valgrind), INT_MAX/4 characters accepted, asn1_* unit tests pass, openssl req -utf8 works.",
+  "regression_ja": "短い文字列の変換は未修正版と同一 (ASan/valgrind 下も)、INT_MAX/4 文字は受理、asn1_* 単体テスト合格、openssl req -utf8 も動作。",
+  "tools": [
+    "gcc",
+    "gdb",
+    "AddressSanitizer",
+    "valgrind",
+    "OpenSSL unit tests (asn1_*_test of the patched build)",
+    "openssl req"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/023_CVE-2026-7383/poc_mbstr.c",
+    "/home/user/work/poc/023_CVE-2026-7383/build.sh",
+    "/home/user/work/poc/023_CVE-2026-7383/run_poc.sh",
+    "/home/user/work/poc/023_CVE-2026-7383/out/ (raw captures)"
+  ],
+  "limitations_en": "Reachable only via direct API callers with ~2^30-character inputs (C program used); UTF-8 sum overflow cannot wrap to a small positive value with int input, so only the UniversalString case is a memory-safety demonstration; BMP case is a control.",
+  "limitations_ja": "約 2^30 文字の入力を直接 API に渡す呼び出し元のみ到達 (C プログラムで実証)。UTF-8 合計は int 入力では小さな正値に巻き戻らないため、メモリ安全性の実証は UniversalString のケースのみで、BMP は対照。"
+}

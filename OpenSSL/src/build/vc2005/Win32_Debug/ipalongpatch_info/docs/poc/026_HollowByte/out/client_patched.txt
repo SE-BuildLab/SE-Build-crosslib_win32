@@ -1,0 +1,4 @@
+﻿[client] payload (9 bytes): 16 03 01 00 04 01 02 00 00  claimed ClientHello length = 131072
+[client] 200 connections established, waiting 2.0s before sending the headers
+[client] sent the 9 byte header on every connection; holding them open for 4.0s
+[client] closed all connections

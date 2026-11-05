@@ -1,0 +1,34 @@
+{
+  "nnn": "011",
+  "cve": "CVE-2025-69418",
+  "cveinfo": "OCB-AESNI-tail-bytes-unencrypted",
+  "log_file": "20261102_122439_011of033_CVE-2025-69418_OCB-AESNI-tail-bytes-unencrypted.log",
+  "start_jst": "2026/11/02 12:24:39",
+  "end_jst": "2026/11/02 12:41:49",
+  "duration": "00:17:10",
+  "verdict": "PASS",
+  "before_en": "Low-level CRYPTO_ocb128_encrypt() with the AES-NI stream (one call, 40-byte message = 2 blocks + 8): ciphertext differs from EVP at bytes 0-7 and 32-39, in-place output ends with the plaintext tail (2021222324252627), the tag is identical for a message whose tail bytes differ (tail not authenticated), decrypting the correct ciphertext gives wrong plaintext and CRYPTO_ocb128_finish fails; same for 37 bytes (5-byte tail); gdb: in - pt == 0, out - ct == 0 at the tail-processing line. EVP and the generic path match the published known-answer vector.",
+  "before_ja": "AES-NI stream を使う低レベル CRYPTO_ocb128_encrypt() (1 回呼び出し、40 バイト = 2 ブロック + 8): 暗号文がバイト 0〜7 と 32〜39 で EVP と異なり、in-place 出力の末尾が平文 (2021222324252627) のまま、末尾バイトが異なるメッセージでもタグが同一 (末尾は未認証)、正しい暗号文の復号は誤った平文で CRYPTO_ocb128_finish が失敗; 37 バイト (末尾 5 バイト) でも同様; gdb: 末尾処理行で in - pt == 0、out - ct == 0。EVP と汎用経路は公開既知解ベクタと一致。",
+  "after_en": "With the patched libcrypto the AES-NI stream path is bit-identical to EVP and the known-answer vector for 40 and 37 bytes, the tail is encrypted and authenticated, decryption and tag verification succeed (6/6 agreements); gdb: in - pt == 32, out - ct == 32.",
+  "after_ja": "修正済み libcrypto では AES-NI stream 経路が 40/37 バイトで EVP および既知解ベクタとビット単位で一致し、末尾は暗号化・認証され、復号とタグ検証に成功 (6/6 一致); gdb: in - pt == 32、out - ct == 32。",
+  "method_en": "C program ocb_poc.c statically linked to libcrypto.a (BASE/PATCHED) calling internal aesni_* functions via CRYPTO_ocb128_new(); compares EVP_aes_128_ocb, generic low-level and AES-NI low-level paths on OpenSSL's evpciph.txt OCB vector (40 bytes), 37 bytes and a 32-byte control; gdb conditional breakpoint at the tail-processing line; run_poc.sh.",
+  "method_ja": "libcrypto.a (BASE/PATCHED) に静的リンクし CRYPTO_ocb128_new() 経由で内部 aesni_* 関数を呼ぶ C プログラム ocb_poc.c; OpenSSL の evpciph.txt の OCB ベクタ (40 バイト)、37 バイト、32 バイトの対照で EVP_aes_128_ocb・汎用低レベル・AES-NI 低レベルの 3 経路を比較; 末尾処理行での gdb 条件付きブレークポイント; run_poc.sh。",
+  "regression_en": "Patched test/evp_test on evpciph.txt (AES-OCB known-answer vectors) passes (ok 1 - run_file_tests); EVP and generic results identical on BASE/PATCHED; valgrind clean.",
+  "regression_ja": "修正済み test/evp_test による evpciph.txt (AES-OCB 既知解ベクタ) が合格 (ok 1 - run_file_tests); EVP と汎用経路の結果は BASE/PATCHED で同一; valgrind 問題なし。",
+  "tools": [
+    "gcc (static link against libcrypto.a)",
+    "gdb",
+    "valgrind",
+    "test/evp_test (patched build) with test/recipes/30-test_evp_data/evpciph.txt"
+  ],
+  "poc_files": [
+    "/home/user/work/poc/011_CVE-2025-69418/ocb_poc.c",
+    "/home/user/work/poc/011_CVE-2025-69418/run_poc.sh",
+    "/home/user/work/poc/011_CVE-2025-69418/out/run_poc_full.txt",
+    "/home/user/work/poc/011_CVE-2025-69418/out/run_poc_full_attempt1.txt",
+    "/home/user/work/poc/011_CVE-2025-69418/out/base_run.txt",
+    "/home/user/work/poc/011_CVE-2025-69418/out/patched_run.txt"
+  ],
+  "limitations_en": "Reachable only through the low-level API with a hardware stream function (static linking to internal aesni_* symbols); EVP/TLS unaffected (EVP confirmed). Deterministic (published vector). Only AES-128 exercised. First run's gdb breakpoint stopped in the EVP path first; condition tightened and re-run.",
+  "limitations_ja": "ハードウェア stream 関数付き低レベル API からのみ到達可 (内部 aesni_* への静的リンク); EVP/TLS 非影響 (EVP は確認済み)。決定的 (公開ベクタ)。AES-128 のみ試験。初回の gdb ブレークポイントは先に EVP 経路で停止; 条件を絞って再実行。"
+}

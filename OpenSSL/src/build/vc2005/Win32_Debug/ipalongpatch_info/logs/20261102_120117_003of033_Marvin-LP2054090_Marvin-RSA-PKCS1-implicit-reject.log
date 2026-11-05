@@ -1,0 +1,1029 @@
+﻿=== Verification environment / 検証環境 (captured 2026/11/02 11:49:23 JST) ===
+Hostname: vm
+IP addresses: 192.0.2.2
+Kernel: Linux 6.18.44-fc-v185 #1 SMP PREEMPT_DYNAMIC @0 x86_64 GNU/Linux
+OS: Ubuntu 24.04.5 LTS
+CPU: Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical CPUs; flags include aes=1 avx2=avx2
+Memory: 15Gi total
+Virtualization/container: systemd-detect-virt=docker; /.dockerenv=absent; cgroup=9:name=systemd:/
+Execution environment: Anthropic Claude Code cloud sandbox (claude.ai 'Claude Code on the web', ephemeral Linux VM/container, environment id env_01JCo7DCPLioAiaSziA5LodW, session session_0114L1TChBqUkTphQ7qaytCr); not a developer workstation
+AI: Claude Mythos 5.1 (model id claude-mythos-5-1), reasoning effort: max; session start 2026/11/02 10:48:22 (JST)
+Compilers/tools: gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0; Ubuntu clang version 18.1.3 (1ubuntu1); x86_64-w64-mingw32-gcc (GCC) 13-win32; GNU Make 4.3; perl 5, version 38, subversion 2 (v5.38.2) built for x86_64-linux-gnu-thread-multi; Python 3.13.18; GNU gdb (Ubuntu 15.1-1ubuntu1~24.04.1) 15.1; valgrind-3.22.0; wine-9.0 (Ubuntu 9.0~repack-4build3)
+libc: ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39
+Target software: OpenSSL 1.1.1w (openssl-1.1.1w.tar.gz, SHA256 cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8) -> openssl-1.1.1w-ipalongpatch_20261102
+Reference: Ubuntu 20.04 openssl 1.1.1f-1ubuntu2.24+esm6 (openssl_1.1.1f-1ubuntu2.24+esm6.debian.tar.xz SHA256 d57aba66e63067e3297086202045c056989b1d1e672bc5ca66ecfca3964d1dc0)
+Builds used: unpatched 1.1.1w debug build (/home/user/work/base/openssl-1.1.1w: ./config -d shared enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers), unpatched ASan build (/home/user/work/base_asan, same options + enable-asan), patched debug build (/home/user/work/patched/build, same options), patched ASan build (/home/user/work/patched/build-asan), patched mingw64 cross build (/home/user/work/patched/build-mingw64)
+=== end of environment / 環境情報ここまで ===
+
+Verification start: 2026/11/02 12:01:17 (JST)
+
+Item 003 of 033: Marvin-LP2054090 / Marvin-RSA-PKCS1-implicit-reject
+Patch file: /home/user/work/deliver/ipalongpatch_info/patch_files_for_each_cve/openssl-1.1.1w_ipalongpatch_003of033_Marvin-LP2054090_Marvin-RSA-PKCS1-implicit-reject.patch
+Ubuntu reference: /home/user/work/debian_esm6/debian/patches/openssl-1.1.1-pkcs1-implicit-rejection.patch (USN-6663-1, LP: #2054090)
+PoC directory: /home/user/work/poc/003_Marvin-LP2054090
+
+=== c. Vulnerability and PoC strategy / 脆弱性の概要と PoC の方針 ===
+
+[EN] Vulnerability (Marvin attack, Ubuntu LP: #2054090, no CVE assigned to OpenSSL itself).
+OpenSSL 1.1.1w decrypts RSA PKCS#1 v1.5 (RSAES-PKCS1-v1_5) ciphertexts with an explicit
+padding check: RSA_private_decrypt() / EVP_PKEY_decrypt() with RSA_PKCS1_PADDING (the default
+of `openssl pkeyutl -decrypt` and `openssl rsautl -decrypt`) call
+RSA_padding_check_PKCS1_type_2() in crypto/rsa/rsa_pk1.c, and when the decrypted block does not
+start with 0x00 0x02, contains fewer than 8 non-zero padding bytes or has no 0x00 separator, the
+API returns -1, queues RSA_R_PKCS_DECODING_ERROR / RSA_R_PADDING_CHECK_FAILED and produces no
+output. Whether the padding check succeeded is therefore visible to the caller (and through the
+application usually to a remote peer) as a return value, an output length and a different code
+path. This is the oracle used by Bleichenbacher-type chosen-ciphertext attacks. The "Marvin
+Attack" (Hubert Kario, Red Hat, September 2023) showed that such oracles stay exploitable through
+timing even after the constant-time hardening of CVE-2022-4304 and that the robust API-level
+countermeasure is "implicit rejection": when the padding is invalid, return a deterministic
+pseudo-random message derived from the private key and the ciphertext instead of an error, so an
+invalid ciphertext cannot be told apart from a valid ciphertext that happens to contain that
+message. OpenSSL 3.2.0 introduced implicit rejection (PR #13817); upstream 1.1.1 never received it
+("would require a breaking change of RSA decryption behavior"), Ubuntu back-ported the Red Hat
+patch in openssl 1.1.1f-1ubuntu2.22 (USN-6663-1), and IPALongPatch 003 ports that back-port to
+1.1.1w: crypto/rsa/rsa_ossl.c derives a key-derivation key kdk = HMAC-SHA256(key = SHA256(d padded
+to the modulus size), data = ciphertext padded to the modulus size) unconditionally for
+RSA_PKCS1_PADDING and calls the new constant-time ossl_rsa_padding_check_PKCS1_type_2()
+(crypto/rsa/rsa_pk1.c, with ossl_rsa_prf()), which selects either the real message or a synthetic
+message of pseudo-random length with constant-time masks; crypto/rsa/rsa_pmeth.c adds the
+EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION ctrl and the "rsa_pkcs1_implicit_rejection" string ctrl;
+include/openssl/rsa.h adds RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING (8) for the classic behaviour;
+crypto/cms/cms_env.c and crypto/pkcs7/pk7_doit.c disable implicit rejection for CMS/PKCS#7 key
+transport because those layers rely on the decryption error to detect a non-matching key;
+test/recipes/30-test_evp_data/evppkey.txt receives the OpenSSL 3.2 test vectors.
+
+[JA] 脆弱性 (Marvin 攻撃、Ubuntu LP: #2054090、OpenSSL 自体には CVE 未割当)。
+OpenSSL 1.1.1w は RSA PKCS#1 v1.5 (RSAES-PKCS1-v1_5) 暗号文を「明示的な」パディング検査付きで復号する。
+RSA_PKCS1_PADDING を指定した RSA_private_decrypt() / EVP_PKEY_decrypt() (`openssl pkeyutl -decrypt` や
+`openssl rsautl -decrypt` の既定) は crypto/rsa/rsa_pk1.c の RSA_padding_check_PKCS1_type_2() を呼び、
+復号ブロックが 0x00 0x02 で始まらない、非ゼロのパディングが 8 バイト未満、0x00 区切りが無い、のいずれかなら
+API は -1 を返し、RSA_R_PKCS_DECODING_ERROR / RSA_R_PADDING_CHECK_FAILED をエラーキューに入れ、出力を生成
+しない。したがって「パディング検査が成功したか」が戻り値・出力長・異なるコードパスとして呼び出し側 (アプリ
+ケーションを介して多くの場合リモートの相手) に見える。これが Bleichenbacher 型選択暗号文攻撃のオラクルで
+ある。「Marvin 攻撃」(Hubert Kario, Red Hat, 2023 年 9 月) は、CVE-2022-4304 の定数時間化の後もこの種の
+オラクルがタイミング経由で悪用可能なこと、API レベルの堅牢な対策は「implicit rejection (暗黙の拒否)」—
+パディング不正時にエラーではなく秘密鍵と暗号文から決定的に導出した疑似乱数メッセージを返し、不正な暗号文
+と「偶然そのメッセージを含む正当な暗号文」を区別不能にする—であることを示した。OpenSSL 3.2.0 がこれを導入
+(PR #13817) したが、上流 1.1.1 には取り込まれず (「RSA 復号動作の互換性を壊す変更が必要」)、Ubuntu が Red
+Hat のパッチを openssl 1.1.1f-1ubuntu2.22 (USN-6663-1) にバックポートし、IPALongPatch 003 はそれを 1.1.1w に
+移植した: crypto/rsa/rsa_ossl.c は RSA_PKCS1_PADDING の場合に常に (パディングの正否と無関係に) 鍵導出鍵
+kdk = HMAC-SHA256(key = モジュラス長にパディングした d の SHA256, data = モジュラス長にパディングした暗号文)
+を導出し、新設の定数時間関数 ossl_rsa_padding_check_PKCS1_type_2() (crypto/rsa/rsa_pk1.c、ossl_rsa_prf()
+を使用) が定数時間マスクで本物のメッセージか疑似乱数長の合成メッセージかを選択する。crypto/rsa/rsa_pmeth.c
+には EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION ctrl と文字列 ctrl "rsa_pkcs1_implicit_rejection" が追加され、
+include/openssl/rsa.h には従来動作用の RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING (8) が追加された。
+crypto/cms/cms_env.c と crypto/pkcs7/pk7_doit.c は、鍵不一致の検出に復号エラーを利用しているため CMS/PKCS#7
+の鍵転送では implicit rejection を無効化する。test/recipes/30-test_evp_data/evppkey.txt には OpenSSL 3.2 の
+テストベクタが追加された。
+
+[EN] PoC strategy. (a) Generate an RSA-2048 key, a valid PKCS#1 v1.5 ciphertext of "Hello Marvin"
+(two of them, with different random padding) and ciphertexts whose decrypted block has broken
+padding: a valid ciphertext with its last byte flipped (decrypts to a random block), and raw
+(no-padding) RSA encryptions of crafted 256-byte blocks with block type 0x01 instead of 0x02,
+with no 0x00 separator, with only 3 padding bytes, and with a non-zero first byte; also a
+hand-made correctly padded block as a control. Decrypt all of them with the CLI (pkeyutl, rsautl)
+and with a C program (RSA_private_decrypt(), EVP_PKEY_decrypt()) built against each build. The
+unpatched build must report an error for the broken ones (the oracle); the patched build must
+return a deterministic synthetic message (identical bytes when the same ciphertext is decrypted
+again, different bytes/lengths for different ciphertexts) and the correct plaintext for the valid
+ciphertexts. (b) Check that the patched build restores the explicit error when implicit rejection
+is disabled (`-pkeyopt rsa_pkcs1_implicit_rejection:0`, EVP_PKEY_CTX_ctrl(...,
+EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0, NULL), RSA_private_decrypt(...,
+RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING)) and that the unpatched build does not know these controls.
+(c) Interoperability: run the build's test/evp_test on the patched tree's
+test/recipes/30-test_evp_data/evppkey.txt, which contains the OpenSSL 3.2 implicit-rejection
+vectors (keys RSA-2048-2 and RSA-3072 with the expected synthetic outputs); the vector lines were
+compared with the Ubuntu patch (all 156 Decrypt/Input/Output/Ctrl/key lines identical). The
+patched build must pass them, the unpatched one must fail them. (d) Timing: measure
+RSA_private_decrypt() for the valid and for the corrupted ciphertext (5000 interleaved iterations
+each, clock_gettime(CLOCK_MONOTONIC), min/quartiles/median/mean) on both builds. (e) Regression:
+CMS and PKCS#7 (smime) RSA key-transport encrypt/decrypt with the right key and with a wrong key
+(also with `cms -decrypt -debug_decrypt`, which reports the key-transport failure itself), and a
+TLS 1.2 handshake with RSA key exchange (`-cipher AES128-SHA`) between s_server and s_client of
+the same build; valgrind --leak-check=full on the patched decryption path.
+
+[JA] PoC の方針。(a) RSA-2048 鍵、"Hello Marvin" の正当な PKCS#1 v1.5 暗号文 (ランダムパディングの異なる 2 個)、
+および復号ブロックのパディングが壊れている暗号文を作る: 正当な暗号文の末尾 1 バイトを反転したもの (復号結果が
+乱数ブロックになる)、細工した 256 バイトブロックを生 (パディング無し) RSA で暗号化したもの (ブロック種別
+0x01、0x00 区切り無し、パディング 3 バイトのみ、先頭バイトが非ゼロ)、対照として手作りの正しいパディング
+ブロック。これらすべてを各ビルドの CLI (pkeyutl, rsautl) と、各ビルドに対してビルドした C プログラム
+(RSA_private_decrypt(), EVP_PKEY_decrypt()) で復号する。未パッチ版は壊れた暗号文に対してエラーを報告する
+(オラクル) はずで、パッチ版は決定的な合成メッセージ (同じ暗号文を再度復号すると同一バイト列、異なる暗号文
+では異なるバイト列・長さ) を返し、正当な暗号文には正しい平文を返すはずである。(b) パッチ版で implicit
+rejection を無効化 (`-pkeyopt rsa_pkcs1_implicit_rejection:0`、EVP_PKEY_CTX_ctrl(...,
+EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0, NULL)、RSA_private_decrypt(..., RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING))
+すると従来の明示的エラーに戻ること、未パッチ版はこれらの制御を知らないことを確認する。(c) 相互運用性: 各
+ビルドの test/evp_test を、OpenSSL 3.2 の implicit rejection テストベクタ (RSA-2048-2 と RSA-3072 鍵、期待さ
+れる合成出力付き) を含むパッチ版ツリーの test/recipes/30-test_evp_data/evppkey.txt に対して実行する。ベクタ行
+は Ubuntu パッチと比較済み (Decrypt/Input/Output/Ctrl/鍵の 156 行すべて一致)。パッチ版は合格、未パッチ版は
+不合格になるはずである。(d) タイミング: 正当な暗号文と改変暗号文の RSA_private_decrypt() 時間を両ビルドで計測
+する (各 5000 回を交互に、clock_gettime(CLOCK_MONOTONIC)、最小値/四分位/中央値/平均)。(e) 回帰: CMS と
+PKCS#7 (smime) の RSA 鍵転送による暗号化/復号を正しい鍵と誤った鍵で (鍵転送の失敗自体を報告する
+`cms -decrypt -debug_decrypt` も含めて) 確認し、同一ビルドの s_server/s_client 間で RSA 鍵交換の TLS 1.2
+ハンドシェイク (`-cipher AES128-SHA`) を確認する。パッチ版の復号経路には valgrind --leak-check=full を掛ける。
+
+[EN] Note on evidence type: this item is a logic / API-level oracle, not a memory-safety defect, so
+no crash, ASan report or gdb backtrace is expected. The "unpatched evidence" is the error return
+for invalid padding (and the failing OpenSSL 3.2 test vectors); the "patched evidence" is the
+deterministic synthetic output and the passing vectors.
+
+[JA] 証拠の種類に関する注記: 本項目はロジック / API レベルのオラクルであり、メモリ安全性の欠陥ではないため、
+クラッシュ・ASan レポート・gdb バックトレースは発生しない。「未パッチ版の証拠」はパディング不正時のエラー
+戻り (および OpenSSL 3.2 テストベクタの不合格)、「パッチ版の証拠」は決定的な合成出力とベクタの合格である。
+
+=== d. Commands executed and raw output / 実行したコマンドと生の出力 ===
+
+[EN] Builds: BASE = /home/user/work/base/openssl-1.1.1w (unpatched 1.1.1w, debug), PATCHED = /home/user/work/patched/build (patched, debug). Tools: util/shlib_wrap.sh + apps/openssl of each build, test/evp_test of each build, gcc 13.3.0, valgrind 3.22.0, python3 -I.
+[JA] ビルド: BASE = /home/user/work/base/openssl-1.1.1w (未パッチ 1.1.1w、デバッグ)、PATCHED = /home/user/work/patched/build (パッチ版、デバッグ)。ツール: 各ビルドの util/shlib_wrap.sh + apps/openssl、各ビルドの test/evp_test、gcc 13.3.0、valgrind 3.22.0、python3 -I。
+
+--- d-1. Test input generation: /home/user/work/poc/003_Marvin-LP2054090/gen_inputs.sh (+ make_blocks.py) ---
+$ cat gen_inputs.sh
+#!/bin/bash
+# Generates the RSA key and the test ciphertexts for item 003.
+# The key / ciphertexts are build independent; the unpatched (BASE) build is
+# used to create them (encryption is not affected by the patch).
+set -e
+D=/home/user/work/poc/003_Marvin-LP2054090
+BASE=/home/user/work/base/openssl-1.1.1w
+OSSL="$BASE/util/shlib_wrap.sh $BASE/apps/openssl"
+cd "$D"
+mkdir -p inputs
+cd inputs
+echo "+ generating RSA-2048 key (rsa2048.pem / rsa2048_pub.pem) and a second, unrelated key (wrong.pem)"
+$OSSL genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out rsa2048.pem 2>/dev/null
+$OSSL pkey -in rsa2048.pem -pubout -out rsa2048_pub.pem
+$OSSL genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out wrong.pem 2>/dev/null
+printf 'Hello Marvin' > msg.txt
+echo "+ ct_good.bin  : PKCS#1 v1.5 encryption of 'Hello Marvin' (random padding)"
+$OSSL pkeyutl -encrypt -pubin -inkey rsa2048_pub.pem -pkeyopt rsa_padding_mode:pkcs1 -in msg.txt -out ct_good.bin
+echo "+ ct_good2.bin : second PKCS#1 v1.5 encryption of the same message (different random padding)"
+$OSSL pkeyutl -encrypt -pubin -inkey rsa2048_pub.pem -pkeyopt rsa_padding_mode:pkcs1 -in msg.txt -out ct_good2.bin
+echo "+ crafting raw blocks with broken padding (python3 -I make_blocks.py)"
+python3 -I "$D/make_blocks.py" . ct_good.bin
+for b in blk_bad_type1 blk_bad_nosep blk_bad_shortpad blk_bad_first blk_good_manual; do
+    # raw RSA (no padding) encryption of the crafted block -> ciphertext whose
+    # decryption yields exactly that block
+    $OSSL pkeyutl -encrypt -pubin -inkey rsa2048_pub.pem -pkeyopt rsa_padding_mode:none -in $b.bin -out ct_${b#blk_}.bin
+    echo "+ ct_${b#blk_}.bin : raw-RSA encryption of $b.bin"
+done
+ls -la
+sha256sum ct_*.bin
+
+$ ./gen_inputs.sh
++ generating RSA-2048 key (rsa2048.pem / rsa2048_pub.pem) and a second, unrelated key (wrong.pem)
++ ct_good.bin  : PKCS#1 v1.5 encryption of 'Hello Marvin' (random padding)
++ ct_good2.bin : second PKCS#1 v1.5 encryption of the same message (different random padding)
++ crafting raw blocks with broken padding (python3 -I make_blocks.py)
+wrote ct_bad_flip.bin        256 bytes  first bytes: d3490f2927211758b812d1f2
+wrote blk_bad_type1.bin      256 bytes  first bytes: 0001ffffffffffffffffffff
+wrote blk_bad_nosep.bin      256 bytes  first bytes: 000255555555555555555555
+wrote blk_bad_shortpad.bin   256 bytes  first bytes: 0002aaaaaa0048656c6c6f20
+wrote blk_bad_first.bin      256 bytes  first bytes: 0102bbbbbbbbbbbbbbbbbbbb
+wrote blk_good_manual.bin    256 bytes  first bytes: 00021112131415161718191a
++ ct_bad_type1.bin : raw-RSA encryption of blk_bad_type1.bin
++ ct_bad_nosep.bin : raw-RSA encryption of blk_bad_nosep.bin
++ ct_bad_shortpad.bin : raw-RSA encryption of blk_bad_shortpad.bin
++ ct_bad_first.bin : raw-RSA encryption of blk_bad_first.bin
++ ct_good_manual.bin : raw-RSA encryption of blk_good_manual.bin
+total 76
+drwxr-xr-x 2 root root 4096 Nov  2 03:03 .
+drwxr-xr-x 3 root root 4096 Nov  2 03:03 ..
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_bad_first.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_bad_nosep.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_bad_shortpad.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_bad_type1.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 blk_good_manual.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_first.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_flip.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_nosep.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_shortpad.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_bad_type1.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_good.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_good2.bin
+-rw-r--r-- 1 root root  256 Nov  2 03:03 ct_good_manual.bin
+-rw-r--r-- 1 root root   12 Nov  2 03:03 msg.txt
+-rw------- 1 root root 1704 Nov  2 03:03 rsa2048.pem
+-rw-r--r-- 1 root root  451 Nov  2 03:03 rsa2048_pub.pem
+-rw------- 1 root root 1704 Nov  2 03:03 wrong.pem
+e90d4d17384ce3bc0715a6d55941498577731bab331c8913fc261e807a087823  ct_bad_first.bin
+7246f45b81ed7fea1e1f3a3f4c35e38afe53f1785e7296006c63790d152c99e9  ct_bad_flip.bin
+14e82921badadcd2b383087d3e5b52d259e093cb43012d79128a4d98f9faef33  ct_bad_nosep.bin
+f4ff459079805cf00119d6aa0454f3ab449d43bb709bbb8ca5ecad8abe4be5cf  ct_bad_shortpad.bin
+428176539b539364fc51c253c938b04469d5e0060774bb2cedf82bbbf19e3590  ct_bad_type1.bin
+3b1061fe2d1e822a3648231cdfb015ef741976423d914b07386834baa7cb2f65  ct_good.bin
+9f54a041eaf1d858120919f536f2238c93d4f0675db7a756518d78eae25fc27a  ct_good2.bin
+8b38c7dce59b58a1eaca6edd45b611b8d9b7bbb0b9054b4a5e7b6f5e40bb9eb7  ct_good_manual.bin
+
+--- d-2. C PoC /home/user/work/poc/003_Marvin-LP2054090/poc_rsa.c, compiled for each build ---
+$ gcc -g -O0 -Wall -I/home/user/work/base/openssl-1.1.1w/include poc_rsa.c -L/home/user/work/base/openssl-1.1.1w -lssl -lcrypto -Wl,-rpath,/home/user/work/base/openssl-1.1.1w -o poc_rsa_base
+$ gcc -g -O0 -Wall -I/home/user/work/patched/build/include -I/home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/include poc_rsa.c -L/home/user/work/patched/build -lssl -lcrypto -Wl,-rpath,/home/user/work/patched/build -o poc_rsa_patched
+(exact behaviour of each API call is printed by the program; see d-5)
+
+--- d-3. First attempt of run_poc.sh (kept as history) / run_poc.sh の初回試行 (履歴) ---
+[EN] Problems found and fixed afterwards: 'xxd' is not installed (hex dump replaced by od), 'openssl req -x509' needs -config <build>/apps/openssl.cnf in this environment (the certificate was therefore missing and the CMS/PKCS#7/TLS checks could not run), and the TLS success check was too permissive. Excerpt:
+[JA] 判明し後で修正した問題: 'xxd' が未インストール (od による hex ダンプに置換)、この環境では 'openssl req -x509' に -config <build>/apps/openssl.cnf が必要 (証明書が作られず CMS/PKCS#7/TLS の確認が実行できなかった)、TLS 成功判定が緩すぎた。抜粋:
+8:./run_poc.sh: line 25: xxd: command not found
+192:unable to load certificate
+198:unable to load certificate
+213:unable to load certificate
+219:unable to load certificate
+230:  [s_client exit=1]
+231:  TLS handshake with RSA key exchange: OK (cipher AES128-SHA negotiated)
+239:./run_poc.sh: line 25: xxd: command not found
+270:./run_poc.sh: line 42: xxd: command not found
+374:unable to load certificate
+380:unable to load certificate
+395:unable to load certificate
+
+--- d-4. Second attempt (kept as history) / 2 回目の試行 (履歴) ---
+[EN] CMS/PKCS#7 decrypted output differed from the input at the last byte because 'cms/smime -encrypt' without -binary converts the text to canonical CRLF form; -binary was added, and 'cms -decrypt -debug_decrypt' with the wrong key was added to exercise the key-transport error path. Excerpt:
+[JA] -binary 無しの 'cms/smime -encrypt' はテキストを正規化 CRLF 形式に変換するため、CMS/PKCS#7 の復号出力が入力と最終バイトで不一致になった。-binary を追加し、鍵転送のエラー経路を確認するため誤った鍵での 'cms -decrypt -debug_decrypt' を追加した。抜粋:
+185:  median difference (bad - valid) = -3319 ns  (-0.46 % of valid median)
+197:work/cms_plain.txt work/cms_dec_BASE.txt differ: char 46, line 1
+209:work/cms_plain.txt work/p7_dec_BASE.txt differ: char 46, line 1
+362:  median difference (bad - valid) = -4504 ns  (-0.62 % of valid median)
+370:work/cms_plain.txt work/cms_dec_PATCHED.txt differ: char 46, line 1
+382:work/cms_plain.txt work/p7_dec_PATCHED.txt differ: char 46, line 1
+
+--- d-5. Final run: $ TIMING_N=5000 ./run_poc.sh  (complete raw output, /home/user/work/poc/003_Marvin-LP2054090/raw_run_poc.txt) ---
+$ cat run_poc.sh
+#!/bin/bash
+# Item 003 (Marvin-LP2054090): RSA PKCS#1 v1.5 implicit rejection - full demonstration.
+# Runs every check against the unpatched (BASE) and the patched (PATCHED) build and
+# prints a verdict.  Raw output is written to raw_run_poc.txt by the caller (tee).
+D=/home/user/work/poc/003_Marvin-LP2054090
+BASE=/home/user/work/base/openssl-1.1.1w
+PATCHED=/home/user/work/patched/build
+PATCHED_SRC=/home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102
+IN=$D/inputs
+TIMING_N=${TIMING_N:-5000}
+cd "$D" || exit 1
+mkdir -p work
+fail=0
+note() { echo; echo "##### $*"; }
+run() { echo "+ $*"; "$@"; echo "  [exit=$?]"; }
+hex() { od -A d -t x1z -v "$1"; }
+
+for B in BASE PATCHED; do
+    if [ $B = BASE ]; then W=$BASE; CNF=$BASE/apps/openssl.cnf; else W=$PATCHED; CNF=$PATCHED_SRC/apps/openssl.cnf; fi
+    OSSL="$W/util/shlib_wrap.sh $W/apps/openssl"
+    note "[$B] openssl version"
+    $OSSL version
+
+    note "[$B] (a) CLI: pkeyutl -decrypt, valid ciphertext"
+    run $OSSL pkeyutl -decrypt -inkey $IN/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in $IN/ct_good.bin -out work/out_good_$B.bin
+    hex work/out_good_$B.bin
+    note "[$B] (a) CLI: pkeyutl -decrypt, corrupted ciphertext (last byte flipped), run twice"
+    for i in 1 2; do
+        run $OSSL pkeyutl -decrypt -inkey $IN/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in $IN/ct_bad_flip.bin -out work/out_badflip_${B}_$i.bin
+        [ -s work/out_badflip_${B}_$i.bin ] && { echo "  output: $(stat -c %s work/out_badflip_${B}_$i.bin) bytes, sha256=$(sha256sum < work/out_badflip_${B}_$i.bin | cut -c1-32)"; } || echo "  output: (empty / none)"
+    done
+    note "[$B] (a) CLI: pkeyutl -decrypt, ciphertext whose plaintext block has type 0x01 instead of 0x02"
+    run $OSSL pkeyutl -decrypt -inkey $IN/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in $IN/ct_bad_type1.bin -out work/out_badtype1_$B.bin
+    [ -s work/out_badtype1_$B.bin ] && echo "  output: $(stat -c %s work/out_badtype1_$B.bin) bytes, sha256=$(sha256sum < work/out_badtype1_$B.bin | cut -c1-32)" || echo "  output: (empty / none)"
+    note "[$B] (a) CLI: rsautl -decrypt, corrupted ciphertext"
+    run $OSSL rsautl -decrypt -inkey $IN/rsa2048.pem -in $IN/ct_bad_flip.bin -out work/out_rsautl_$B.bin
+    [ -s work/out_rsautl_$B.bin ] && echo "  output: $(stat -c %s work/out_rsautl_$B.bin) bytes, sha256=$(sha256sum < work/out_rsautl_$B.bin | cut -c1-32)" || echo "  output: (empty / none)"
+    note "[$B] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, corrupted ciphertext"
+    run $OSSL pkeyutl -decrypt -inkey $IN/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in $IN/ct_bad_flip.bin -out work/out_badflip_noir_$B.bin
+    [ -s work/out_badflip_noir_$B.bin ] && echo "  output: $(stat -c %s work/out_badflip_noir_$B.bin) bytes" || echo "  output: (empty / none)"
+    note "[$B] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, valid ciphertext (must still work)"
+    run $OSSL pkeyutl -decrypt -inkey $IN/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in $IN/ct_good.bin -out work/out_good_noir_$B.bin
+    [ -s work/out_good_noir_$B.bin ] && hex work/out_good_noir_$B.bin || echo "  output: (empty / none)"
+
+    note "[$B] (a)(b) C PoC: RSA_private_decrypt / EVP_PKEY_decrypt on all ciphertexts"
+    POC=./poc_rsa_base; [ $B = PATCHED ] && POC=./poc_rsa_patched
+    run $POC $IN/rsa2048.pem $IN/ct_good.bin $IN/ct_good2.bin $IN/ct_good_manual.bin $IN/ct_bad_flip.bin $IN/ct_bad_type1.bin $IN/ct_bad_nosep.bin $IN/ct_bad_shortpad.bin $IN/ct_bad_first.bin
+
+    note "[$B] (c) evp_test with the patched tree's test/recipes/30-test_evp_data/evppkey.txt (implicit rejection vectors from OpenSSL 3.2)"
+    $W/util/shlib_wrap.sh $W/test/evp_test $PATCHED_SRC/test/recipes/30-test_evp_data/evppkey.txt > work/evp_test_$B.txt 2>&1
+    echo "  [evp_test exit=$?]"
+    grep -c "^Decrypt = RSA-2048-2\|^Decrypt = RSA-3072" $PATCHED_SRC/test/recipes/30-test_evp_data/evppkey.txt | sed 's/^/  RSA-2048-2 + RSA-3072 Decrypt vectors in file: /'
+    echo "  --- evp_test summary / failures (head) ---"
+    grep -iE "fail|error|^[0-9]+ tests|tests completed|passed" work/evp_test_$B.txt | head -40
+    tail -3 work/evp_test_$B.txt
+
+    note "[$B] (d) timing: RSA_private_decrypt valid vs invalid padding ($TIMING_N iterations each)"
+    run $POC $IN/rsa2048.pem --timing $TIMING_N $IN/ct_good.bin $IN/ct_bad_flip.bin
+
+    note "[$B] (e) regression: CMS encrypt/decrypt (RSA PKCS#1 v1.5 key transport), right key and wrong key"
+    if [ ! -f work/cms_cert.pem ]; then
+        run $OSSL req -config $CNF -x509 -new -key $IN/rsa2048.pem -subj /CN=cms-recipient -days 3 -out work/cms_cert.pem
+        run $OSSL req -config $CNF -x509 -new -key $IN/wrong.pem -subj /CN=other -days 3 -out work/wrong_cert.pem
+        printf 'CMS test payload %s\n' "$(date -u)" > work/cms_plain.txt
+    fi
+    run $OSSL cms -encrypt -binary -in work/cms_plain.txt -recip work/cms_cert.pem -aes128 -out work/cms_enc_$B.pem -outform PEM
+    run $OSSL cms -decrypt -in work/cms_enc_$B.pem -inform PEM -recip work/cms_cert.pem -inkey $IN/rsa2048.pem -out work/cms_dec_$B.txt
+    cmp work/cms_plain.txt work/cms_dec_$B.txt && echo "  CMS decrypt with right key: plaintext matches"
+    run $OSSL cms -decrypt -in work/cms_enc_$B.pem -inform PEM -inkey $IN/wrong.pem -out work/cms_dec_wrong_$B.txt
+    echo "  (expected: error with wrong key in both builds; output size: $(stat -c %s work/cms_dec_wrong_$B.txt 2>/dev/null || echo none))"
+    echo "  -- same with -debug_decrypt (CMS_DEBUG_DECRYPT: report the RSA key-transport decryption failure itself) --"
+    run $OSSL cms -decrypt -debug_decrypt -in work/cms_enc_$B.pem -inform PEM -inkey $IN/wrong.pem -out work/cms_dec_wrong_dbg_$B.txt
+    echo "  (expected in BOTH builds: RSA padding error reported, because cms_env.c keeps explicit rejection for key transport)"
+    note "[$B] (e) regression: PKCS#7 (smime) encrypt/decrypt, right key and wrong key"
+    run $OSSL smime -encrypt -binary -in work/cms_plain.txt -aes128 -out work/p7_enc_$B.pem -outform PEM work/cms_cert.pem
+    run $OSSL smime -decrypt -in work/p7_enc_$B.pem -inform PEM -recip work/cms_cert.pem -inkey $IN/rsa2048.pem -out work/p7_dec_$B.txt
+    cmp work/cms_plain.txt work/p7_dec_$B.txt && echo "  PKCS#7 decrypt with right key: plaintext matches"
+    run $OSSL smime -decrypt -in work/p7_enc_$B.pem -inform PEM -inkey $IN/wrong.pem -out work/p7_dec_wrong_$B.txt
+    echo "  (expected: error with wrong key in both builds; output size: $(stat -c %s work/p7_dec_wrong_$B.txt 2>/dev/null || echo none))"
+
+    note "[$B] (e) regression: TLS 1.2 with RSA key exchange (AES128-SHA), s_server/s_client of the same build"
+    PORT=$((44300 + RANDOM % 200))
+    $OSSL s_server -accept $PORT -key $IN/rsa2048.pem -cert work/cms_cert.pem -tls1_2 -cipher AES128-SHA -naccept 1 -www > work/tls_server_$B.txt 2>&1 &
+    SPID=$!
+    sleep 1
+    echo "GET / HTTP/1.0" | $OSSL s_client -connect 127.0.0.1:$PORT -tls1_2 -cipher AES128-SHA -CAfile work/cms_cert.pem -ign_eof > work/tls_client_$B.txt 2>&1
+    echo "  [s_client exit=$?]"
+    wait $SPID 2>/dev/null
+    grep -E "^New, |Cipher is|Verify return code|Protocol  :|Server public key|Ciphersuite|^    Protocol|^    Cipher" work/tls_client_$B.txt | head -8
+    if grep -q "Cipher is AES128-SHA" work/tls_client_$B.txt && grep -q "Verify return code: 0 (ok)" work/tls_client_$B.txt && grep -q "Ciphers common between both SSL end points" work/tls_client_$B.txt; then echo "  TLS handshake with RSA key exchange: OK (cipher AES128-SHA negotiated, server page received)"; else echo "  TLS handshake FAILED"; fail=1; fi
+done
+
+note "valgrind (PATCHED, implicit rejection code path: valid + 2 invalid ciphertexts)"
+valgrind --leak-check=full --error-exitcode=9 -q ./poc_rsa_patched $IN/rsa2048.pem $IN/ct_good.bin $IN/ct_bad_flip.bin $IN/ct_bad_type1.bin > work/valgrind_patched.txt 2>&1
+echo "  [valgrind exit=$?]  (9 = valgrind found errors)"
+grep -E "ERROR SUMMARY|definitely lost|indirectly lost|Invalid" work/valgrind_patched.txt | head -5
+
+note "VERDICT"
+# BASE must error on bad padding; PATCHED must return deterministic data and error only when implicit rejection is disabled
+b_err=$(grep -c "padding check failed" raw_poc_c_base.txt 2>/dev/null)
+echo "  (see the per-build sections above; summary is produced by the caller from the raw output)"
+exit $fail
+
+$ TIMING_N=5000 ./run_poc.sh
+
+##### [BASE] openssl version
+OpenSSL 1.1.1w  11 Sep 2023
+
+##### [BASE] (a) CLI: pkeyutl -decrypt, valid ciphertext
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin -out work/out_good_BASE.bin
+  [exit=0]
+0000000 48 65 6c 6c 6f 20 4d 61 72 76 69 6e              >Hello Marvin<
+0000012
+
+##### [BASE] (a) CLI: pkeyutl -decrypt, corrupted ciphertext (last byte flipped), run twice
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_BASE_1.bin
+Public Key operation error
+139961674914688:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+139961674914688:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_BASE_2.bin
+Public Key operation error
+139730910030720:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+139730910030720:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (a) CLI: pkeyutl -decrypt, ciphertext whose plaintext block has type 0x01 instead of 0x02
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin -out work/out_badtype1_BASE.bin
+Public Key operation error
+140274694830976:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+140274694830976:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (a) CLI: rsautl -decrypt, corrupted ciphertext
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl rsautl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_rsautl_BASE.bin
+RSA operation error
+140566660832128:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+140566660832128:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, corrupted ciphertext
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_noir_BASE.bin
+pkeyutl: Can't set parameter "rsa_pkcs1_implicit_rejection:0":
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, valid ciphertext (must still work)
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin -out work/out_good_noir_BASE.bin
+pkeyutl: Can't set parameter "rsa_pkcs1_implicit_rejection:0":
+  [exit=1]
+  output: (empty / none)
+
+##### [BASE] (a)(b) C PoC: RSA_private_decrypt / EVP_PKEY_decrypt on all ciphertexts
++ ./poc_rsa_base /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good2.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good_manual.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_nosep.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_shortpad.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_first.bin
+Library: OpenSSL 1.1.1w  11 Sep 2023 (headers: OpenSSL 1.1.1w  11 Sep 2023, implicit-rejection ctrl in headers: no)
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good2.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good_manual.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_nosep.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_shortpad.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_first.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = -2  (ctrl NOT supported by this build)
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065076:rsa routines:rsa_ossl_private_decrypt:unknown padding type
+  [exit=0]
+
+##### [BASE] (c) evp_test with the patched tree's test/recipes/30-test_evp_data/evppkey.txt (implicit rejection vectors from OpenSSL 3.2)
+  [evp_test exit=1]
+  RSA-2048-2 + RSA-3072 Decrypt vectors in file: 39
+  --- evp_test summary / failures (head) ---
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:377: Source of above error; unexpected error PKEY_CTRL_INVALID
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:384: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:390: Expected KEYOP_ERROR got PKEY_CTRL_INVALID
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:496: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:501: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:506: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:511: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:551: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:557: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:563: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:570: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:577: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:584: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:591: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # 139968616273728:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+    # /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt:597: Source of above error; unexpected error KEYOP_ERROR
+    # 139968616273728:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+    # Completed 1499 tests with 33 errors and 0 skipped
+    not ok 1 - /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt
+not ok 1 - run_file_tests
+
+##### [BASE] (d) timing: RSA_private_decrypt valid vs invalid padding (5000 iterations each)
++ ./poc_rsa_base /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem --timing 5000 /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin
+Library: OpenSSL 1.1.1w  11 Sep 2023 (headers: OpenSSL 1.1.1w  11 Sep 2023, implicit-rejection ctrl in headers: no)
+Timing RSA_private_decrypt(RSA_PKCS1_PADDING), 5000 iterations each, interleaved
+  last return values: valid ciphertext -> 12, invalid ciphertext -> -1
+  valid-padding  n=5000 min=676785 q1=701910 median=741524 q3=977806 p90=1151149 mean=889046 (ns)
+  bad-padding    n=5000 min=677597 q1=701494 median=731673 q3=944431 p90=1070342 mean=830784 (ns)
+  median difference (bad - valid) = -9851 ns  (-1.33 % of valid median)
+  [exit=0]
+
+##### [BASE] (e) regression: CMS encrypt/decrypt (RSA PKCS#1 v1.5 key transport), right key and wrong key
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl cms -encrypt -binary -in work/cms_plain.txt -recip work/cms_cert.pem -aes128 -out work/cms_enc_BASE.pem -outform PEM
+  [exit=0]
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl cms -decrypt -in work/cms_enc_BASE.pem -inform PEM -recip work/cms_cert.pem -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -out work/cms_dec_BASE.txt
+  [exit=0]
+  CMS decrypt with right key: plaintext matches
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl cms -decrypt -in work/cms_enc_BASE.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/cms_dec_wrong_BASE.txt
+Error decrypting CMS structure
+140494782380928:error:06065064:digital envelope routines:EVP_DecryptFinal_ex:bad decrypt:crypto/evp/evp_enc.c:612:
+  [exit=4]
+  (expected: error with wrong key in both builds; output size: 32)
+  -- same with -debug_decrypt (CMS_DEBUG_DECRYPT: report the RSA key-transport decryption failure itself) --
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl cms -decrypt -debug_decrypt -in work/cms_enc_BASE.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/cms_dec_wrong_dbg_BASE.txt
+Error decrypting CMS using private key
+140260561800064:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+140260561800064:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+140260561800064:error:2E08C068:CMS routines:cms_RecipientInfo_ktri_decrypt:cms lib:crypto/cms/cms_env.c:421:
+140260561800064:error:2E072084:CMS routines:CMS_decrypt_set1_pkey:no matching recipient:crypto/cms/cms_smime.c:668:
+  [exit=4]
+  (expected in BOTH builds: RSA padding error reported, because cms_env.c keeps explicit rejection for key transport)
+
+##### [BASE] (e) regression: PKCS#7 (smime) encrypt/decrypt, right key and wrong key
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl smime -encrypt -binary -in work/cms_plain.txt -aes128 -out work/p7_enc_BASE.pem -outform PEM work/cms_cert.pem
+  [exit=0]
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl smime -decrypt -in work/p7_enc_BASE.pem -inform PEM -recip work/cms_cert.pem -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -out work/p7_dec_BASE.txt
+  [exit=0]
+  PKCS#7 decrypt with right key: plaintext matches
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl smime -decrypt -in work/p7_enc_BASE.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/p7_dec_wrong_BASE.txt
+Error decrypting PKCS#7 structure
+140458455427968:error:06065064:digital envelope routines:EVP_DecryptFinal_ex:bad decrypt:crypto/evp/evp_enc.c:617:
+  [exit=4]
+  (expected: error with wrong key in both builds; output size: 32)
+
+##### [BASE] (e) regression: TLS 1.2 with RSA key exchange (AES128-SHA), s_server/s_client of the same build
+  [s_client exit=0]
+New, SSLv3, Cipher is AES128-SHA
+Server public key is 2048 bit
+    Protocol  : TLSv1.2
+    Cipher    : AES128-SHA
+    Verify return code: 0 (ok)
+New, SSLv3, Cipher is AES128-SHA
+    Protocol  : TLSv1.2
+    Cipher    : AES128-SHA
+  TLS handshake with RSA key exchange: OK (cipher AES128-SHA negotiated, server page received)
+
+##### [PATCHED] openssl version
+OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+
+##### [PATCHED] (a) CLI: pkeyutl -decrypt, valid ciphertext
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin -out work/out_good_PATCHED.bin
+  [exit=0]
+0000000 48 65 6c 6c 6f 20 4d 61 72 76 69 6e              >Hello Marvin<
+0000012
+
+##### [PATCHED] (a) CLI: pkeyutl -decrypt, corrupted ciphertext (last byte flipped), run twice
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_PATCHED_1.bin
+  [exit=0]
+  output: 229 bytes, sha256=5d4ec236cedc4b3d522e7fca4c386aae
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_PATCHED_2.bin
+  [exit=0]
+  output: 229 bytes, sha256=5d4ec236cedc4b3d522e7fca4c386aae
+
+##### [PATCHED] (a) CLI: pkeyutl -decrypt, ciphertext whose plaintext block has type 0x01 instead of 0x02
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin -out work/out_badtype1_PATCHED.bin
+  [exit=0]
+  output: 84 bytes, sha256=1d093d0d27f9c491395c24de86fcb3e7
+
+##### [PATCHED] (a) CLI: rsautl -decrypt, corrupted ciphertext
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl rsautl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_rsautl_PATCHED.bin
+  [exit=0]
+  output: 229 bytes, sha256=5d4ec236cedc4b3d522e7fca4c386aae
+
+##### [PATCHED] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, corrupted ciphertext
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_noir_PATCHED.bin
+Public Key operation error
+140407049624448:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_pk1.c:277:
+140407049624448:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_ossl.c:737:
+  [exit=1]
+  output: (empty / none)
+
+##### [PATCHED] (b) CLI: pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0, valid ciphertext (must still work)
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -pkeyopt rsa_pkcs1_implicit_rejection:0 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin -out work/out_good_noir_PATCHED.bin
+  [exit=0]
+0000000 48 65 6c 6c 6f 20 4d 61 72 76 69 6e              >Hello Marvin<
+0000012
+
+##### [PATCHED] (a)(b) C PoC: RSA_private_decrypt / EVP_PKEY_decrypt on all ciphertexts
++ ./poc_rsa_patched /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good2.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good_manual.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_nosep.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_shortpad.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_first.bin
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023 (headers: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023, implicit-rejection ctrl in headers: yes)
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good2.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good_manual.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  EVP_PKEY_decrypt(default)                      -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_type1.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  EVP_PKEY_decrypt(default)                      -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_nosep.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 51 data=e69d1b1576f55376296ae72a98df9cb50af109ae017e31c4... sha256(out)=6d5fbd518c0c70b1...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 51 data=e69d1b1576f55376296ae72a98df9cb50af109ae017e31c4... sha256(out)=6d5fbd518c0c70b1...
+  EVP_PKEY_decrypt(default)                      -> OK len= 51 data=e69d1b1576f55376296ae72a98df9cb50af109ae017e31c4... sha256(out)=6d5fbd518c0c70b1...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_shortpad.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 23 data=389b828c0a9cc946c6901f497f4fc3db05f730091a45b2 sha256(out)=8eb9ed1cd7455054...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 23 data=389b828c0a9cc946c6901f497f4fc3db05f730091a45b2 sha256(out)=8eb9ed1cd7455054...
+  EVP_PKEY_decrypt(default)                      -> OK len= 23 data=389b828c0a9cc946c6901f497f4fc3db05f730091a45b2 sha256(out)=8eb9ed1cd7455054...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_first.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len=217 data=e769688baf9d0472ed73c753767c89a813bffb813896c2ee... sha256(out)=fa7bad8616adf223...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len=217 data=e769688baf9d0472ed73c753767c89a813bffb813896c2ee... sha256(out)=fa7bad8616adf223...
+  EVP_PKEY_decrypt(default)                      -> OK len=217 data=e769688baf9d0472ed73c753767c89a813bffb813896c2ee... sha256(out)=fa7bad8616adf223...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  [exit=0]
+
+##### [PATCHED] (c) evp_test with the patched tree's test/recipes/30-test_evp_data/evppkey.txt (implicit rejection vectors from OpenSSL 3.2)
+  [evp_test exit=0]
+  RSA-2048-2 + RSA-3072 Decrypt vectors in file: 39
+  --- evp_test summary / failures (head) ---
+    # Completed 1499 tests with 0 errors and 0 skipped
+    # Completed 1499 tests with 0 errors and 0 skipped
+    ok 1 - /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/test/recipes/30-test_evp_data/evppkey.txt
+ok 1 - run_file_tests
+
+##### [PATCHED] (d) timing: RSA_private_decrypt valid vs invalid padding (5000 iterations each)
++ ./poc_rsa_patched /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem --timing 5000 /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_good.bin /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023 (headers: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023, implicit-rejection ctrl in headers: yes)
+Timing RSA_private_decrypt(RSA_PKCS1_PADDING), 5000 iterations each, interleaved
+  last return values: valid ciphertext -> 12, invalid ciphertext -> 229
+  valid-padding  n=5000 min=674502 q1=694205 median=702928 q3=738964 p90=1110832 mean=797808 (ns)
+  bad-padding    n=5000 min=675270 q1=695503 median=703200 q3=724216 p90=931631 mean=753170 (ns)
+  median difference (bad - valid) = 272 ns  (0.04 % of valid median)
+  [exit=0]
+
+##### [PATCHED] (e) regression: CMS encrypt/decrypt (RSA PKCS#1 v1.5 key transport), right key and wrong key
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -encrypt -binary -in work/cms_plain.txt -recip work/cms_cert.pem -aes128 -out work/cms_enc_PATCHED.pem -outform PEM
+  [exit=0]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -decrypt -in work/cms_enc_PATCHED.pem -inform PEM -recip work/cms_cert.pem -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -out work/cms_dec_PATCHED.txt
+  [exit=0]
+  CMS decrypt with right key: plaintext matches
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -decrypt -in work/cms_enc_PATCHED.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/cms_dec_wrong_PATCHED.txt
+Error decrypting CMS structure
+139676901604224:error:06065064:digital envelope routines:EVP_DecryptFinal_ex:bad decrypt:../openssl-1.1.1w-ipalongpatch_20261102/crypto/evp/evp_enc.c:612:
+  [exit=4]
+  (expected: error with wrong key in both builds; output size: 32)
+  -- same with -debug_decrypt (CMS_DEBUG_DECRYPT: report the RSA key-transport decryption failure itself) --
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -decrypt -debug_decrypt -in work/cms_enc_PATCHED.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/cms_dec_wrong_dbg_PATCHED.txt
+Error decrypting CMS using private key
+139784571501440:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_pk1.c:277:
+139784571501440:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_ossl.c:737:
+139784571501440:error:2E08C068:CMS routines:cms_RecipientInfo_ktri_decrypt:cms lib:../openssl-1.1.1w-ipalongpatch_20261102/crypto/cms/cms_env.c:456:
+139784571501440:error:2E072084:CMS routines:CMS_decrypt_set1_pkey:no matching recipient:../openssl-1.1.1w-ipalongpatch_20261102/crypto/cms/cms_smime.c:668:
+  [exit=4]
+  (expected in BOTH builds: RSA padding error reported, because cms_env.c keeps explicit rejection for key transport)
+
+##### [PATCHED] (e) regression: PKCS#7 (smime) encrypt/decrypt, right key and wrong key
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl smime -encrypt -binary -in work/cms_plain.txt -aes128 -out work/p7_enc_PATCHED.pem -outform PEM work/cms_cert.pem
+  [exit=0]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl smime -decrypt -in work/p7_enc_PATCHED.pem -inform PEM -recip work/cms_cert.pem -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -out work/p7_dec_PATCHED.txt
+  [exit=0]
+  PKCS#7 decrypt with right key: plaintext matches
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl smime -decrypt -in work/p7_enc_PATCHED.pem -inform PEM -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/wrong.pem -out work/p7_dec_wrong_PATCHED.txt
+Error decrypting PKCS#7 structure
+139827734219648:error:06065064:digital envelope routines:EVP_DecryptFinal_ex:bad decrypt:../openssl-1.1.1w-ipalongpatch_20261102/crypto/evp/evp_enc.c:612:
+  [exit=4]
+  (expected: error with wrong key in both builds; output size: 32)
+
+##### [PATCHED] (e) regression: TLS 1.2 with RSA key exchange (AES128-SHA), s_server/s_client of the same build
+  [s_client exit=0]
+New, SSLv3, Cipher is AES128-SHA
+Server public key is 2048 bit
+    Protocol  : TLSv1.2
+    Cipher    : AES128-SHA
+    Verify return code: 0 (ok)
+New, SSLv3, Cipher is AES128-SHA
+    Protocol  : TLSv1.2
+    Cipher    : AES128-SHA
+  TLS handshake with RSA key exchange: OK (cipher AES128-SHA negotiated, server page received)
+
+##### valgrind (PATCHED, implicit rejection code path: valid + 2 invalid ciphertexts)
+  [valgrind exit=0]  (9 = valgrind found errors)
+
+##### VERDICT
+  (see the per-build sections above; summary is produced by the caller from the raw output)
+
+--- d-6. valgrind on the patched decryption path (complete, /home/user/work/poc/003_Marvin-LP2054090/raw_valgrind_patched.txt) ---
+$ valgrind --leak-check=full ./poc_rsa_patched inputs/rsa2048.pem inputs/ct_good.bin inputs/ct_bad_flip.bin inputs/ct_bad_type1.bin
+==1678== Memcheck, a memory error detector
+==1678== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1678== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==1678== Command: ./poc_rsa_patched inputs/rsa2048.pem inputs/ct_good.bin inputs/ct_bad_flip.bin inputs/ct_bad_type1.bin
+==1678== 
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023 (headers: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023, implicit-rejection ctrl in headers: yes)
+Ciphertext file: inputs/ct_good.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_decrypt(default)                      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> OK len= 12 data=48656c6c6f204d617276696e sha256(out)=4cb664c4534ed6cf...
+Ciphertext file: inputs/ct_bad_flip.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  EVP_PKEY_decrypt(default)                      -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+Ciphertext file: inputs/ct_bad_type1.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  EVP_PKEY_decrypt(default)                      -> OK len= 84 data=705bba0fc3fddfc891c67f4d0d03377ed05e4890e5c1a82a... sha256(out)=1d093d0d27f9c491...
+  EVP_PKEY_CTX_ctrl_str("rsa_pkcs1_implicit_rejection","0") = 1
+  EVP_PKEY_decrypt(implicit_rejection:0 str)     -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_CTX_ctrl(EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, 0) = 1
+  EVP_PKEY_decrypt(IMPLICIT_REJECTION ctrl=0)    -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(NO_IMPLICIT_REJECT=8)      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+==1678== 
+==1678== HEAP SUMMARY:
+==1678==     in use at exit: 0 bytes in 0 blocks
+==1678==   total heap usage: 3,343 allocs, 3,343 frees, 243,306 bytes allocated
+==1678== 
+==1678== All heap blocks were freed -- no leaks are possible
+==1678== 
+==1678== For lists of detected and suppressed errors, rerun with: -s
+==1678== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+=== e. Evidence for the UNPATCHED build (BASE) / 未パッチ版 (BASE) の証拠 ===
+
+[EN] The unpatched 1.1.1w reports every broken-padding ciphertext as an error, i.e. the padding
+oracle is exposed by the API: `pkeyutl -decrypt` prints "Public Key operation error" with
+"RSA_padding_check_PKCS1_type_2:pkcs decoding error" and "rsa_ossl_private_decrypt:padding check
+failed" and exits with status 1 without writing any output; `rsautl -decrypt` prints "RSA
+operation error"; RSA_private_decrypt() and EVP_PKEY_decrypt() return -1 with
+error:04065072 (padding check failed) for ct_bad_flip, ct_bad_type1, ct_bad_nosep,
+ct_bad_shortpad and ct_bad_first, while the three valid ciphertexts decrypt to "Hello Marvin"
+(12 bytes). The controls that disable implicit rejection do not exist in this build
+(`-pkeyopt rsa_pkcs1_implicit_rejection:0` -> "Can't set parameter", EVP_PKEY_CTX_ctrl returns
+-2, padding mode 8 -> "unknown padding type"). The OpenSSL 3.2 implicit-rejection test vectors
+fail on this build: evp_test "Completed 1499 tests with 33 errors" (PKEY_CTRL_INVALID for the
+Ctrl line, KEYOP_ERROR for every corrupted-ciphertext vector that expects a synthetic output).
+Timing (5000+5000 interleaved RSA_private_decrypt() calls): valid median 741524 ns vs invalid
+731673 ns in the final run (-1.3 %); the two earlier runs gave -0.26 % and -0.46 %. The
+difference is within the run-to-run noise of this shared VM, so no timing signal is claimed for
+1.1.1w (its padding check is already the constant-time version of CVE-2022-4304); the oracle that
+this item removes is the explicit error signal.
+
+[JA] 未パッチ版 1.1.1w は、パディングが壊れた暗号文すべてをエラーとして報告する。すなわちパディングオラクルが
+API から露出している: `pkeyutl -decrypt` は "Public Key operation error" と "RSA_padding_check_PKCS1_type_2:
+pkcs decoding error"、"rsa_ossl_private_decrypt:padding check failed" を出力し、出力ファイルを書かずに終了
+コード 1 で終了する。`rsautl -decrypt` は "RSA operation error" を出力する。RSA_private_decrypt() と
+EVP_PKEY_decrypt() は ct_bad_flip, ct_bad_type1, ct_bad_nosep, ct_bad_shortpad, ct_bad_first に対して
+error:04065072 (padding check failed) で -1 を返し、正当な 3 つの暗号文は "Hello Marvin" (12 バイト) に復号
+される。implicit rejection を無効化する制御はこのビルドには存在しない (`-pkeyopt rsa_pkcs1_implicit_rejection:0`
+-> "Can't set parameter"、EVP_PKEY_CTX_ctrl は -2 を返す、パディングモード 8 -> "unknown padding type")。
+OpenSSL 3.2 の implicit rejection テストベクタはこのビルドでは不合格: evp_test "Completed 1499 tests with 33
+errors" (Ctrl 行は PKEY_CTRL_INVALID、合成出力を期待する改変暗号文ベクタはすべて KEYOP_ERROR)。タイミング
+(RSA_private_decrypt() を正当/不正で交互に 5000 回ずつ): 最終実行では正当の中央値 741524 ns 対 不正 731673 ns
+(-1.3 %)、先行 2 回の実行では -0.26 % と -0.46 %。差はこの共有 VM の実行間ノイズの範囲内であり、1.1.1w に
+タイミング信号があるとは主張しない (パディング検査自体は CVE-2022-4304 で定数時間化済み)。本項目が除去する
+オラクルは明示的なエラー信号である。
+
+=== f. Evidence for the PATCHED build / パッチ版の証拠 ===
+
+[EN] The patched build never signals a padding failure through the default API: ct_bad_flip
+decrypts to a 229-byte synthetic message (sha256 5d4ec236cedc4b3d...), identical for the two
+pkeyutl runs, for rsautl and for the two RSA_private_decrypt() calls and EVP_PKEY_decrypt(); the
+other broken ciphertexts give different synthetic messages of different pseudo-random lengths
+(ct_bad_type1 84 bytes, ct_bad_nosep 51 bytes, ct_bad_shortpad 23 bytes, ct_bad_first 217 bytes),
+each deterministic. The valid ciphertexts still decrypt to "Hello Marvin". With implicit
+rejection disabled (`-pkeyopt rsa_pkcs1_implicit_rejection:0`, the numeric ctrl, or padding mode
+RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING) the classic error "padding check failed" is restored and the
+valid ciphertext still decrypts. The OpenSSL 3.2 vectors pass: evp_test "Completed 1499 tests with
+0 errors" (39 RSA-2048-2 / RSA-3072 Decrypt vectors, outputs byte-identical to upstream 3.2, which
+also proves interoperability of the synthetic messages). Timing: valid median 702928 ns vs
+invalid 703200 ns (+0.04 %; earlier runs -0.01 % and -0.62 %), i.e. no measurable difference.
+valgrind --leak-check=full on the implicit-rejection path: 0 errors, no leaks.
+
+[JA] パッチ版は既定の API ではパディング失敗を一切通知しない: ct_bad_flip は 229 バイトの合成メッセージ
+(sha256 5d4ec236cedc4b3d...) に復号され、pkeyutl の 2 回の実行、rsautl、RSA_private_decrypt() の 2 回の呼び出し、
+EVP_PKEY_decrypt() のすべてで同一である。他の壊れた暗号文はそれぞれ異なる疑似乱数長の合成メッセージ
+(ct_bad_type1 84 バイト、ct_bad_nosep 51 バイト、ct_bad_shortpad 23 バイト、ct_bad_first 217 バイト) になり、
+いずれも決定的である。正当な暗号文は引き続き "Hello Marvin" に復号される。implicit rejection を無効化
+(`-pkeyopt rsa_pkcs1_implicit_rejection:0`、数値 ctrl、またはパディングモード RSA_PKCS1_NO_IMPLICIT_REJECT_PADDING)
+すると従来のエラー "padding check failed" に戻り、正当な暗号文は復号できる。OpenSSL 3.2 のベクタは合格:
+evp_test "Completed 1499 tests with 0 errors" (RSA-2048-2 / RSA-3072 の Decrypt ベクタ 39 個、出力は上流 3.2 と
+バイト単位で同一であり、合成メッセージの相互運用性の根拠にもなる)。タイミング: 正当 702928 ns 対 不正
+703200 ns (+0.04 %; 先行実行は -0.01 % と -0.62 %)、すなわち計測可能な差は無い。implicit rejection 経路への
+valgrind --leak-check=full: エラー 0、リーク無し。
+
+=== g. Regression / side-effect check / 回帰・副作用の確認 ===
+
+[EN] In both builds: CMS (`openssl cms -encrypt -binary ... -aes128` / `cms -decrypt`) and PKCS#7
+(`openssl smime -encrypt -binary` / `smime -decrypt`) round-trip with the right RSA key
+("plaintext matches"); decryption with a wrong key fails identically in both builds ("Error
+decrypting CMS/PKCS#7 structure", EVP_DecryptFinal_ex:bad decrypt — the pre-existing
+MMA-defence random content key), and with `cms -decrypt -debug_decrypt` both builds report the RSA
+key-transport failure itself ("RSA_padding_check_PKCS1_type_2:pkcs decoding error ...
+cms_RecipientInfo_ktri_decrypt:cms lib ... no matching recipient"), which shows that the
+cms_env.c hunk indeed keeps the explicit rejection for CMS key transport. TLS 1.2 with RSA key
+exchange: s_server/s_client (`-tls1_2 -cipher AES128-SHA`) negotiate "Cipher is AES128-SHA",
+"Verify return code: 0 (ok)" and the server page is received in both builds. The first script
+attempt failed for environmental reasons only (xxd missing, `openssl req` needing -config, S/MIME
+canonical CRLF conversion making cmp fail); those runs are kept below as history.
+
+[JA] 両ビルドで: CMS (`openssl cms -encrypt -binary ... -aes128` / `cms -decrypt`) と PKCS#7
+(`openssl smime -encrypt -binary` / `smime -decrypt`) は正しい RSA 鍵で往復復号に成功 ("plaintext matches")。
+誤った鍵での復号は両ビルドで同一に失敗 ("Error decrypting CMS/PKCS#7 structure"、EVP_DecryptFinal_ex:bad
+decrypt — 従来からの MMA 対策によるランダムなコンテンツ鍵)、`cms -decrypt -debug_decrypt` では両ビルドとも
+RSA 鍵転送の失敗そのもの ("RSA_padding_check_PKCS1_type_2:pkcs decoding error ...
+cms_RecipientInfo_ktri_decrypt:cms lib ... no matching recipient") を報告し、cms_env.c のハンクが CMS 鍵転送
+で明示的拒否を維持していることを示す。RSA 鍵交換の TLS 1.2: s_server/s_client (`-tls1_2 -cipher AES128-SHA`)
+は両ビルドで "Cipher is AES128-SHA"、"Verify return code: 0 (ok)" を示しサーバページを受信した。スクリプトの
+初回試行は環境要因のみで失敗した (xxd 不在、`openssl req` に -config が必要、S/MIME の正規化 CRLF 変換で cmp が
+不一致)。それらの実行結果も履歴として以下に残す。
+
+--- key excerpts (BASE) / 主要な抜粋 (BASE) ---
+##### [BASE] (a) CLI: pkeyutl -decrypt, corrupted ciphertext (last byte flipped), run twice
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_BASE_1.bin
+Public Key operation error
+139961674914688:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+139961674914688:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
++ /home/user/work/base/openssl-1.1.1w/util/shlib_wrap.sh /home/user/work/base/openssl-1.1.1w/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_BASE_2.bin
+Public Key operation error
+139730910030720:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:crypto/rsa/rsa_pk1.c:251:
+139730910030720:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+  output: (empty / none)
+
+    # Completed 1499 tests with 33 errors and 0 skipped
+Ciphertext file: inputs/ct_bad_flip.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+  EVP_PKEY_decrypt(default)                      -> ERROR ret=-1 : error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed
+
+--- key excerpts (PATCHED) / 主要な抜粋 (PATCHED) ---
+##### [PATCHED] (a) CLI: pkeyutl -decrypt, corrupted ciphertext (last byte flipped), run twice
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_PATCHED_1.bin
+  [exit=0]
+  output: 229 bytes, sha256=5d4ec236cedc4b3d522e7fca4c386aae
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl pkeyutl -decrypt -inkey /home/user/work/poc/003_Marvin-LP2054090/inputs/rsa2048.pem -pkeyopt rsa_padding_mode:pkcs1 -in /home/user/work/poc/003_Marvin-LP2054090/inputs/ct_bad_flip.bin -out work/out_badflip_PATCHED_2.bin
+  [exit=0]
+  output: 229 bytes, sha256=5d4ec236cedc4b3d522e7fca4c386aae
+
+    # Completed 1499 tests with 0 errors and 0 skipped
+Ciphertext file: inputs/ct_bad_flip.bin (256 bytes)
+  RSA_private_decrypt(PKCS1_PADDING) #1          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  RSA_private_decrypt(PKCS1_PADDING) #2          -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+  EVP_PKEY_decrypt(default)                      -> OK len=229 data=7bb08ba0b48e31c356f092198c97c5bcf4211693393ba9e7... sha256(out)=5d4ec236cedc4b3d...
+
+Verification end: 2026/11/02 12:12:06 (JST)
+Duration: 00:10:49
+
+Verdict: PASS
+[EN] The unpatched build exposes the PKCS#1 v1.5 padding oracle through its API (error return, no output, 33 failing OpenSSL 3.2 vectors); the patched build implements implicit rejection exactly like OpenSSL 3.2 (deterministic synthetic messages, all 3.2 vectors pass, opt-out controls work), and CMS/PKCS#7/TLS RSA usage shows no regression (CMS/PKCS#7 deliberately keep the explicit error). Timing differences were not observable in either build on this VM; the removed oracle is the API-level one.
+[JA] 未パッチ版は PKCS#1 v1.5 のパディングオラクルを API を通じて露出している (エラー戻り・出力無し・OpenSSL 3.2 ベクタ 33 件が不合格)。パッチ版は OpenSSL 3.2 と同一の implicit rejection を実装しており (決定的な合成メッセージ、3.2 ベクタ全件合格、無効化オプションも動作)、CMS/PKCS#7/TLS の RSA 利用に回帰は無い (CMS/PKCS#7 は意図的に明示的エラーを維持)。タイミング差はこの VM ではいずれのビルドでも観測されなかった。除去されたオラクルは API レベルのものである。
+
+=== Addendum (post-review amendments) 2026/11/02 16:49:07 JST ===
+
+[EN] The patch of this item was amended after the review of the deliverable (see readme.md section 14 and section 11 of the 000 log): crypto/rsa/rsa_pk1.c includes rsa_local.h (internal prototype; './config --strict-warnings' builds again) and the CMS KeyTransRecipientInfo code issues the implicit-rejection ctrl only for RSA_PKCS1_PADDING, guarded by OPENSSL_NO_RSA (RSAES-OAEP recipients no longer leave two stale errors in the error queue after CMS_RecipientInfo_decrypt()). The PoC results above were recorded before the amendment; the amendment does not change the logic of the fix. After the amendment the tree was rebuilt (0 warnings), the complete test suite passed again (159 recipe files, 2658 tests), the wine subset passed (194 tests) and the (i)/(ii)/(iii) check is identical.
+[JA] 本項目のパッチは納品物レビュー後に修正された (readme.md 14 節と 000 ログ 11 節参照): crypto/rsa/rsa_pk1.c が rsa_local.h をインクルード (内部プロトタイプ; './config --strict-warnings' で再びビルド可能) し、CMS KeyTransRecipientInfo のコードは implicit rejection の ctrl を RSA_PKCS1_PADDING のときのみ発行し OPENSSL_NO_RSA でガードする (RSAES-OAEP 受信者で CMS_RecipientInfo_decrypt() 後にエラーキューへ 2 件の無関係なエラーが残らなくなった)。 上記の PoC 結果は修正前に記録したものであり、修正は修正内容のロジックを変えない。修正後にツリーを再ビルド (警告 0) し、全テストスイート (159 レシピファイル、2658 テスト) と wine サブセット (194 テスト) が再度合格、(i)/(ii)/(iii) 検証も一致した。
+
+--- re-check after the amendment (implicit rejection, CMS error queue before/after, --strict-warnings build) / 修正後の再確認 ---
+##### (D) item 003: implicit rejection still active (pkeyutl) and CMS RSAES-OAEP decryption leaves the error queue clean (PT-03)
++ PATCHED pkeyutl -decrypt (corrupted ciphertext, implicit rejection: synthetic plaintext, exit 0 expected)
+229
+  [exit=0]
++ PATCHED pkeyutl -decrypt -pkeyopt rsa_pkcs1_implicit_rejection:0 (classic error expected)
+140717185256320:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:../openssl-1.1.1w-ipalongpatch_20261102/crypto/rsa/rsa_ossl.c:737:
+  [exit=1]
++ BASE pkeyutl -decrypt (error expected)
+140491897338752:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:crypto/rsa/rsa_ossl.c:490:
+  [exit=1]
+##### (D') item 003: CMS RSAES-OAEP / PKCS#1 v1.5 decryption and the error queue (PT-03), amended library vs the library before the amendments
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl req -x509 -newkey rsa:2048 -nodes -keyout /home/user/work/rebuild/rechecks/rk.pem -out /home/user/work/rebuild/rechecks/rc.pem -subj /CN=cms-errq -days 2 -config /home/user/work/patched/openssl-1.1.1w-ipalongpatch_20261102/apps/openssl.cnf
+  [exit=0]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -encrypt -in /home/user/work/rebuild/rechecks/m.txt -outform DER -out /home/user/work/rebuild/rechecks/oaep.der -aes128 -recip /home/user/work/rebuild/rechecks/rc.pem -keyopt rsa_padding_mode:oaep
+  [exit=0]
++ /home/user/work/patched/build/util/shlib_wrap.sh /home/user/work/patched/build/apps/openssl cms -encrypt -in /home/user/work/rebuild/rechecks/m.txt -outform DER -out /home/user/work/rebuild/rechecks/pkcs1.der -aes128 -recip /home/user/work/rebuild/rechecks/rc.pem
+  [exit=0]
++ ./cms_errq_new /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/oaep.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_decrypt() returned 1, 23 plaintext bytes
+errors left in the error queue after decryption: 0 (clean)
+  [exit=0]
++ ./cms_errq_new /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/pkcs1.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_decrypt() returned 1, 23 plaintext bytes
+errors left in the error queue after decryption: 0 (clean)
+  [exit=0]
+--- the same program linked against the library before the amendments (master_before_review):
++ ./cms_errq_old /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/oaep.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_decrypt() returned 1, 23 plaintext bytes
+errors left in the error queue after decryption: 0 (clean)
+  [exit=0]
++ ./cms_errq_old /home/user/work/rebuild/rechecks/rk.pem /home/user/work/rebuild/rechecks/rc.pem /home/user/work/rebuild/rechecks/pkcs1.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_decrypt() returned 1, 23 plaintext bytes
+errors left in the error queue after decryption: 0 (clean)
+  [exit=0]
++ CLI: openssl(PATCHED) cms -decrypt (OAEP message) -- plaintext expected, no error output
+cms error queue check
+  [exit=0]
++ CLI: openssl(PATCHED) cms -decrypt (PKCS#1 v1.5 message)
+cms error queue check
+  [exit=0]
+
+##### (D'') item 003: CMS_RecipientInfo_decrypt() on an RSAES-OAEP recipient - error queue, library before vs after the amendment
++ ./cms_errq2_old rk.pem rc.pem oaep.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_RecipientInfo_decrypt() returned 1
+  stale error in queue: error:0408F08D:rsa routines:pkey_rsa_ctrl:invalid padding mode
+  stale error in queue: error:06089093:digital envelope routines:EVP_PKEY_CTX_ctrl:command not supported
+errors left in the error queue after the successful recipient decryption: 2
+  [exit=0]
++ ./cms_errq2_old rk.pem rc.pem pkcs1.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_RecipientInfo_decrypt() returned 1
+errors left in the error queue after the successful recipient decryption: 0 (clean)
+  [exit=0]
++ ./cms_errq2_new rk.pem rc.pem oaep.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_RecipientInfo_decrypt() returned 1
+errors left in the error queue after the successful recipient decryption: 0 (clean)
+  [exit=0]
++ ./cms_errq2_new rk.pem rc.pem pkcs1.der
+Library: OpenSSL 1.1.1w [ipalongpatch_20261102]  11 Sep 2023
+CMS_RecipientInfo_decrypt() returned 1
+errors left in the error queue after the successful recipient decryption: 0 (clean)
+  [exit=0]
+##### (I) item 003: './config --strict-warnings' builds libcrypto and libssl (P-01)
+  strict-warnings build exit=0 warnings=0 errors=0 libs: 2
+
+Verdict unchanged: PASS / 判定は不変: 合格
